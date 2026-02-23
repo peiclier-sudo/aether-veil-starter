@@ -1,0 +1,38 @@
+{
+  "name": "aether-veil-starter",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@babylonjs/core": "8.0.0",
+    "@supabase/supabase-js": "^2.53.0",
+    "@tanstack/react-query": "^5.66.0",
+    "babylonjs": "8.0.0",
+    "babylonjs-gui": "8.0.0",
+    "babylonjs-loaders": "8.0.0",
+    "lucide-react": "^0.511.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "@types/node": "^22.15.21",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "shadcn-ui": "^0.9.5",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~5.8.3",
+    "vite": "^6.0.0",
+    "vite-plugin-pwa": "^1.0.2",
+    "@vitejs/plugin-react": "^5.0.0"
+  }
+}
