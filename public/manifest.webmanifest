@@ -1,0 +1,15 @@
+{
+  "name": "Aether Veil Starter",
+  "short_name": "AetherVeil",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0d14",
+  "theme_color": "#0f0d14",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
