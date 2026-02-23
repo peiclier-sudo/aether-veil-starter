@@ -1,7 +1,30 @@
 import { Sparkles } from 'lucide-react'
+import { useEffect } from 'react'
 import { HeroScene } from './components/hero-scene'
+import { useGameStore } from './lib/store'
 
 export default function App() {
+  const { heroes, addHero } = useGameStore()
+
+  useEffect(() => {
+    if (heroes.length === 0) {
+      addHero({
+        id: 'solara-001',
+        name: 'Solara',
+        faction: 'Solar Dominion',
+        rarity: 'legendary',
+        level: 1,
+        power: 1250,
+        glbUrl: '/assets/models/solara.glb',
+        equippedGear: {},
+        skills: [
+          { name: 'Solar Flare', cooldown: 3 },
+          { name: 'Radiant Bond', cooldown: 5 }
+        ]
+      })
+    }
+  }, [heroes.length, addHero])
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0f0d14] to-[#171221] text-zinc-100">
       <section className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 lg:py-14">
@@ -14,6 +37,7 @@ export default function App() {
           <p className="mt-3 max-w-2xl text-sm text-zinc-300 lg:text-base">
             Vite 6, React 19, Babylon.js 8, PWA, Supabase, and Zustand tuned for instant Vercel deployment.
           </p>
+          <p className="mt-2 text-xs uppercase tracking-[0.14em] text-amber-300/80">Roster Initialized: {heroes.length} Hero(es)</p>
         </header>
 
         <HeroScene />
