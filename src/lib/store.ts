@@ -23,9 +23,14 @@ export interface Hero {
   id: string
   name: string
   faction: string
-  rarity: 'rare' | 'epic' | 'legendary'
+  rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  role: 'offensive' | 'defensive' | 'support'
   level: number
   power: number
+  hp?: number
+  atk?: number
+  def?: number
+  spd?: number
   imageUrl?: string
   glbUrl: string
   equippedGear: Partial<Record<Gear['slot'], Gear>>
