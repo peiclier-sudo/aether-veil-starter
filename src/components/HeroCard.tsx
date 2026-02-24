@@ -2,55 +2,66 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Hero } from '@/lib/store'
 
-const rarityColors = {
-  common: 'border-gray-400 bg-gray-900/80',
-  rare: 'border-blue-400 bg-blue-950/80 shadow-blue-500/30',
-  epic: 'border-purple-400 bg-purple-950/80 shadow-purple-500/40',
-  legendary: 'border-yellow-400 bg-yellow-950/90 shadow-[0_0_25px_#facc15] ring-1 ring-yellow-400/60',
+const rarityGlow = {
+  common: 'shadow-[0_0_15px_#9ca3af]',
+  rare: 'shadow-[0_0_25px_#60a5fa]',
+  epic: 'shadow-[0_0_35px_#c084fc]',
+  legendary: 'shadow-[0_0_45px_#fcd34d] ring-2 ring-yellow-400/70',
 }
 
-const roleColors = {
-  offensive: 'bg-red-500/20 text-red-400 border-red-400',
-  defensive: 'bg-emerald-500/20 text-emerald-400 border-emerald-400',
-  support: 'bg-sky-500/20 text-sky-400 border-sky-400',
+const roleIcon = {
+  offensive: '🔥',
+  defensive: '🛡️',
+  support: '✨',
 }
 
 export default function HeroCard({ hero, onClick }: { hero: Hero; onClick: () => void }) {
   return (
-    <Card 
+    <Card
       onClick={onClick}
       className={`
-        group w-full overflow-hidden border-2 cursor-pointer transition-all duration-300 hover:scale-105 hover:-translate-y-1
-        ${rarityColors[hero.rarity as keyof typeof rarityColors]}
+        group relative overflow-hidden border-2 bg-gradient-to-br from-zinc-950 to-black
+        transition-all duration-500 hover:scale-105 hover:-translate-y-2 cursor-pointer
+        ${rarityGlow[hero.rarity as keyof typeof rarityGlow]}
       `}
     >
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-3">
+      {/* Subtle cosmic glow overlay */}
+      <div className="absolute inset-0 bg-[radial-gradient(at_center,#ffffff08_0%,transparent_70%)]" />
+
+      <CardContent className="p-6 relative z-10">
+        <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-xl font-serif tracking-wider text-white group-hover:text-yellow-300 transition-colors">
+            <h3 className="text-2xl font-serif tracking-widest text-white group-hover:text-yellow-300 transition-colors">
               {hero.name}
             </h3>
-            <p className="text-sm text-white/70">{hero.faction}</p>
+            <p className="text-sm text-white/60 mt-1">{hero.faction}</p>
           </div>
-          <Badge className={`${roleColors[hero.role as keyof typeof roleColors]} text-xs px-3 py-1`}>
-            {hero.role.toUpperCase()}
-          </Badge>
+          <div className="text-3xl opacity-80">{roleIcon[hero.role as keyof typeof roleIcon]}</div>
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <div className="text-white/90">
-            Lv. <span className="font-mono text-lg">{hero.level}</span>
+        <div className="flex items-baseline justify-between">
+          <div>
+            <span className="text-xs text-white/50">LVL</span>
+            <span className="text-4xl font-mono text-white ml-2">{hero.level}</span>
           </div>
           <div className="text-right">
-            <span className="text-yellow-400 font-mono text-xl font-bold">{hero.power}</span>
-            <span className="text-white/50 text-xs ml-1">PWR</span>
+            <div className="text-4xl font-mono font-bold text-yellow-400 tracking-tighter">{hero.power}</div>
+            <div className="text-[10px] text-yellow-400/70 -mt-1">POWER</div>
           </div>
         </div>
 
-        <div className="mt-4 h-1 bg-white/10 rounded overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-yellow-400 to-amber-300 w-[65%]" />
+        <div className="mt-6 flex gap-2">
+          <Badge variant="outline" className="border-white/30 text-white/80">
+            {hero.role.toUpperCase()}
+          </Badge>
+          <Badge className={`font-mono text-xs ${hero.rarity === 'legendary' ? 'bg-yellow-400 text-black' : 'bg-white/10'}`}>
+            {hero.rarity.toUpperCase()}
+          </Badge>
         </div>
       </CardContent>
+
+      {/* Bottom shine line */}
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-300 to-transparent opacity-30 group-hover:opacity-80 transition-opacity" />
     </Card>
   )
 }
