@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import path from 'node:path'
+import path from 'path'
 
 export default defineConfig({
   plugins: [
@@ -22,42 +22,18 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,glb,png,webp,jpg,svg}'],
+        globPatterns: ['**/*.{js,css,html,glb,png,webp}'],
         maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/assets\.babylonjs\.com/,
-            handler: 'CacheFirst',
-            options: { cacheName: 'babylon-assets' }
-          }
-        ]
       }
-    }),
-    {
-      name: 'chunk-split',
-      config() {
-        return {
-          build: {
-            rollupOptions: {
-              output: {
-                manualChunks: {
-                  babylon: ['babylonjs', 'babylonjs-loaders', 'babylonjs-gui', '@babylonjs/core']
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    })
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': path.resolve(__dirname, './src'),
+    },
   },
   server: { port: 5173 },
   build: {
     chunkSizeWarningLimit: 1600,
-    sourcemap: false
   }
 })

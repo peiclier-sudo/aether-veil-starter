@@ -25,7 +25,6 @@ export default function HeroCard({ hero, onClick }: { hero: Hero; onClick: () =>
         ${rarityGlow[hero.rarity as keyof typeof rarityGlow]}
       `}
     >
-      {/* Subtle cosmic glow overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(at_center,#ffffff08_0%,transparent_70%)]" />
 
       <CardContent className="p-6 relative z-10">
@@ -51,7 +50,7 @@ export default function HeroCard({ hero, onClick }: { hero: Hero; onClick: () =>
         </div>
 
         <div className="mt-6 flex gap-2">
-          <Badge variant="outline" className="border-white/30 text-white/80">
+          <Badge variant="secondary" className="border-white/30 text-white/80">
             {hero.role.toUpperCase()}
           </Badge>
           <Badge className={`font-mono text-xs ${hero.rarity === 'legendary' ? 'bg-yellow-400 text-black' : 'bg-white/10'}`}>
@@ -60,7 +59,6 @@ export default function HeroCard({ hero, onClick }: { hero: Hero; onClick: () =>
         </div>
       </CardContent>
 
-      {/* Bottom shine line */}
       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-300 to-transparent opacity-30 group-hover:opacity-80 transition-opacity" />
     </Card>
   )
