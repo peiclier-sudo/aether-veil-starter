@@ -18,32 +18,33 @@ export default function RosterPage() {
 
   return (
     <div className="min-h-screen bg-[#0a060f] relative overflow-hidden text-white">
-      {/* Animated cosmic background */}
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff10_1px,transparent_1px)] bg-[length:50px_50px] animate-[twinkle_8s_infinite]" />
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-transparent to-rose-950/30" />
+      {/* Animated cosmic + aurora background */}
+      <div className="absolute inset-0 bg-[radial-gradient(#ffffff10_1px,transparent_1px)] bg-[length:50px_50px] animate-[twinkle_12s_infinite]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-rose-900/30 to-transparent" />
+      <div className="absolute inset-0 bg-[linear-gradient(45deg,#facc1520_0%,transparent_50%,#a5b4fc20_100%)] animate-[aurora_25s_infinite]" />
 
       <div className="max-w-7xl mx-auto px-6 py-16 relative z-10">
         <div className="flex flex-col items-center mb-20">
-          <div className="text-[82px] font-serif tracking-[8px] text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-100 to-yellow-300 drop-shadow-2xl">
+          <div className="text-[88px] font-serif tracking-[8px] text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-100 to-rose-200 drop-shadow-2xl">
             AETHER VEIL
           </div>
-          <div className="text-3xl text-rose-200/90 tracking-[4px] -mt-4">LUMINARA ECHOES</div>
-          <div className="mt-6 text-white/50 text-sm tracking-widest">20 AWAKENED ECHOES • CHOOSE YOUR LIGHT</div>
+          <div className="text-3xl text-rose-200/90 tracking-[6px] -mt-6">LUMINARA ECHOES</div>
+          <div className="mt-6 text-white/50 text-sm tracking-widest">20 AWAKENED ECHOES OF LIGHT</div>
         </div>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-6 justify-center mb-16">
-          <Input 
-            placeholder="Search by name..." 
-            value={search} 
+          <Input
+            placeholder="Search champion name..."
+            value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs bg-black/60 border border-yellow-300/40 focus:border-yellow-300 text-white placeholder:text-white/50"
+            className="max-w-xs bg-black/60 border border-yellow-300/50 focus:border-yellow-300 text-white placeholder:text-white/50 rounded-2xl"
           />
 
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value as any)}
-            className="w-56 bg-black/60 border border-yellow-300/40 text-white px-5 py-3 rounded-xl focus:outline-none focus:border-yellow-300"
+            className="w-56 bg-black/60 border border-yellow-300/50 text-white px-6 py-4 rounded-2xl focus:outline-none focus:border-yellow-300 text-sm"
           >
             <option value="all">All Roles</option>
             <option value="offensive">Offensive</option>
@@ -54,7 +55,7 @@ export default function RosterPage() {
           <select
             value={rarityFilter}
             onChange={(e) => setRarityFilter(e.target.value as any)}
-            className="w-56 bg-black/60 border border-yellow-300/40 text-white px-5 py-3 rounded-xl focus:outline-none focus:border-yellow-300"
+            className="w-56 bg-black/60 border border-yellow-300/50 text-white px-6 py-4 rounded-2xl focus:outline-none focus:border-yellow-300 text-sm"
           >
             <option value="all">All Rarities</option>
             <option value="common">Common</option>
@@ -64,13 +65,12 @@ export default function RosterPage() {
           </select>
         </div>
 
-        {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
           {filteredHeroes.map(hero => (
-            <HeroCard 
-              key={hero.id} 
-              hero={hero} 
-              onClick={() => setSelectedHero(hero)} 
+            <HeroCard
+              key={hero.id}
+              hero={hero}
+              onClick={() => setSelectedHero(hero)}
             />
           ))}
         </div>
@@ -90,7 +90,7 @@ export default function RosterPage() {
               <div><span className="text-white/60">SPD</span> <span className="font-mono text-purple-400">{selectedHero.spd}</span></div>
             </div>
 
-            <div className="mt-16 text-center text-xs text-white/40 tracking-widest">3D PREVIEW + SKILLS IN STEP 6</div>
+            <div className="mt-16 text-center text-xs text-white/40 tracking-widest">FULL 3D PREVIEW + SKILLS IN STEP 6</div>
           </div>
         </div>
       )}

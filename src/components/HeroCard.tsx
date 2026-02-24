@@ -2,10 +2,17 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Hero } from '@/lib/store'
 
 const rarityGlow = {
-  common: 'shadow-[0_0_15px_#9ca3af]',
-  rare: 'shadow-[0_0_30px_#60a5fa]',
-  epic: 'shadow-[0_0_40px_#c084fc]',
-  legendary: 'shadow-[0_0_55px_#fcd34d] ring-2 ring-yellow-400/80',
+  common: 'shadow-[0_0_20px_#9ca3af] border-white/20',
+  rare: 'shadow-[0_0_35px_#60a5fa] border-blue-400/60',
+  epic: 'shadow-[0_0_45px_#c084fc] border-purple-400/60',
+  legendary: 'shadow-[0_0_60px_#fcd34d] border-yellow-400/80 ring-2 ring-yellow-400/80',
+}
+
+const rarityCardBg = {
+  common: 'from-[#1a1525]/90 to-[#0d0a14]/90',
+  rare: 'from-[#0f1a2e]/90 to-[#0a0f1a]/90',
+  epic: 'from-[#1a0f2e]/90 to-[#0f0a1a]/90',
+  legendary: 'from-[#2a1f0a]/90 to-[#1a1005]/90',
 }
 
 const roleIcon = {
@@ -19,13 +26,14 @@ export default function HeroCard({ hero, onClick }: { hero: Hero; onClick: () =>
     <Card
       onClick={onClick}
       className={`
-        group relative overflow-hidden border-2 bg-gradient-to-br from-zinc-950/90 to-black/90 backdrop-blur-xl
+        group relative overflow-hidden border-2 bg-gradient-to-br ${rarityCardBg[hero.rarity as keyof typeof rarityCardBg]} backdrop-blur-xl
         transition-all duration-500 hover:scale-105 hover:-translate-y-3 cursor-pointer
         ${rarityGlow[hero.rarity as keyof typeof rarityGlow]}
       `}
     >
       {/* Inner luminous glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-white/5" />
+      <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
       <CardContent className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
