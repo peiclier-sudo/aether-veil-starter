@@ -2,7 +2,6 @@ import { useGameStore } from '@/lib/store'
 import HeroCard from './HeroCard'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { useState } from 'react'
 
 export default function RosterPage() {
