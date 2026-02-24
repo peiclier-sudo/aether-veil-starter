@@ -1,7 +1,6 @@
 import { useGameStore } from '@/lib/store'
 import HeroCard from './HeroCard'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useState } from 'react'
 
 export default function RosterPage() {
@@ -30,6 +29,7 @@ export default function RosterPage() {
           <div className="mt-4 text-white/40 text-sm">20 LEGENDARY ECHOES AWAKENED</div>
         </div>
 
+        {/* Filters */}
         <div className="flex flex-wrap gap-4 justify-center mb-12">
           <Input 
             placeholder="Search champion..." 
@@ -37,33 +37,32 @@ export default function RosterPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-xs bg-black/70 border border-yellow-400/30 focus:border-yellow-400 text-white placeholder:text-white/40"
           />
-          
-          <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as any)}>
-            <SelectTrigger className="w-52 bg-black/70 border border-yellow-400/30">
-              <SelectValue placeholder="All Roles" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="offensive">Offensive</SelectItem>
-              <SelectItem value="defensive">Defensive</SelectItem>
-              <SelectItem value="support">Support</SelectItem>
-            </SelectContent>
-          </Select>
 
-          <Select value={rarityFilter} onValueChange={(value) => setRarityFilter(value as any)}>
-            <SelectTrigger className="w-52 bg-black/70 border border-yellow-400/30">
-              <SelectValue placeholder="All Rarities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Rarities</SelectItem>
-              <SelectItem value="common">Common</SelectItem>
-              <SelectItem value="rare">Rare</SelectItem>
-              <SelectItem value="epic">Epic</SelectItem>
-              <SelectItem value="legendary">Legendary</SelectItem>
-            </SelectContent>
-          </Select>
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value as any)}
+            className="w-52 bg-black/70 border border-yellow-400/30 text-white px-4 py-2 rounded-md focus:outline-none focus:border-yellow-400"
+          >
+            <option value="all">All Roles</option>
+            <option value="offensive">Offensive</option>
+            <option value="defensive">Defensive</option>
+            <option value="support">Support</option>
+          </select>
+
+          <select
+            value={rarityFilter}
+            onChange={(e) => setRarityFilter(e.target.value as any)}
+            className="w-52 bg-black/70 border border-yellow-400/30 text-white px-4 py-2 rounded-md focus:outline-none focus:border-yellow-400"
+          >
+            <option value="all">All Rarities</option>
+            <option value="common">Common</option>
+            <option value="rare">Rare</option>
+            <option value="epic">Epic</option>
+            <option value="legendary">Legendary</option>
+          </select>
         </div>
 
+        {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
           {filteredHeroes.map(hero => (
             <HeroCard 
@@ -75,6 +74,7 @@ export default function RosterPage() {
         </div>
       </div>
 
+      {/* Modal */}
       {selectedHero && (
         <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4" onClick={() => setSelectedHero(null)}>
           <div className="bg-gradient-to-b from-[#1a1423] to-black border-2 border-yellow-400/70 max-w-lg w-full rounded-2xl p-10" onClick={e => e.stopPropagation()}>
