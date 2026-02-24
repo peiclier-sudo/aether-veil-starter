@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import Dashboard from './components/Dashboard'
 import RosterPage from './components/RosterPage'
+import SummonPortal from './components/SummonPortal'
+import TeamBuilder from './components/TeamBuilder'
+import CampaignPage from './components/CampaignPage'
 
 const navItems = [
   { id: 'home', label: 'Home', icon: '🏠' },
@@ -37,10 +40,12 @@ function App() {
         return <Dashboard onNavigate={setPage} />
       case 'roster':
         return <RosterPage onBack={() => setPage('home')} />
-      case 'campaign':
-        return <ComingSoon title="Campaign" onBack={() => setPage('home')} />
       case 'summon':
-        return <ComingSoon title="Summon Portal" onBack={() => setPage('home')} />
+        return <SummonPortal onBack={() => setPage('home')} />
+      case 'team':
+        return <TeamBuilder onBack={() => setPage('home')} />
+      case 'campaign':
+        return <CampaignPage onBack={() => setPage('home')} onTeamBuilder={() => setPage('team')} />
       case 'arena':
         return <ComingSoon title="Arena" onBack={() => setPage('home')} />
       case 'dungeons':
