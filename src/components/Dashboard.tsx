@@ -107,7 +107,11 @@ function QuickActions({ onNavigate }: { onNavigate: (page: string) => void }) {
     { label: 'Campaign', icon: '⚔️', desc: 'Story battles', page: 'campaign' },
     { label: 'Arena', icon: '🏟️', desc: 'PvP combat', page: 'arena' },
     { label: 'Summon', icon: '🌟', desc: 'Summon heroes', page: 'summon' },
-    { label: 'Dungeons', icon: '🏰', desc: 'Loot & gear', page: 'dungeons' },
+    { label: 'Dungeons', icon: '🌀', desc: 'Loot & gear', page: 'dungeons' },
+    { label: 'Champions', icon: '👥', desc: 'View roster', page: 'roster' },
+    { label: 'Team', icon: '🛡️', desc: 'Build team', page: 'team' },
+    { label: 'Bonds', icon: '🔗', desc: 'Faction synergy', page: 'resonance' },
+    { label: 'Gear', icon: '🗡️', desc: 'Equip heroes', page: 'roster' },
   ]
   return (
     <div className="grid grid-cols-4 gap-3">

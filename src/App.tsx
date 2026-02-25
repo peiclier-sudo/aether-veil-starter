@@ -4,32 +4,17 @@ import RosterPage from './components/RosterPage'
 import SummonPortal from './components/SummonPortal'
 import TeamBuilder from './components/TeamBuilder'
 import CampaignPage from './components/CampaignPage'
+import DungeonsPage from './components/DungeonsPage'
+import ArenaPage from './components/ArenaPage'
+import ResonanceBonds from './components/ResonanceBonds'
 
 const navItems = [
   { id: 'home', label: 'Home', icon: '🏠' },
-  { id: 'roster', label: 'Champions', icon: '👥' },
   { id: 'campaign', label: 'Campaign', icon: '⚔️' },
-  { id: 'summon', label: 'Summon', icon: '🌟' },
+  { id: 'dungeons', label: 'Dungeons', icon: '🌀' },
   { id: 'arena', label: 'Arena', icon: '🏟️' },
+  { id: 'summon', label: 'Summon', icon: '🌟' },
 ]
-
-function ComingSoon({ title, onBack }: { title: string; onBack: () => void }) {
-  return (
-    <div className="min-h-screen bg-[#0a060f] text-white flex flex-col">
-      <div className="flex items-center px-4 py-3 bg-black/60 backdrop-blur-md border-b border-white/10">
-        <button onClick={onBack} className="text-white/60 hover:text-white text-sm transition">← Back</button>
-        <h1 className="text-sm font-bold uppercase tracking-wider ml-4">{title}</h1>
-      </div>
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-4xl mb-4">🚧</p>
-          <p className="text-lg font-bold text-white/60">{title}</p>
-          <p className="text-sm text-white/30 mt-1">Coming soon</p>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function App() {
   const [page, setPage] = useState('home')
@@ -47,9 +32,11 @@ function App() {
       case 'campaign':
         return <CampaignPage onBack={() => setPage('home')} onTeamBuilder={() => setPage('team')} />
       case 'arena':
-        return <ComingSoon title="Arena" onBack={() => setPage('home')} />
+        return <ArenaPage onBack={() => setPage('home')} onTeamBuilder={() => setPage('team')} />
       case 'dungeons':
-        return <ComingSoon title="Dungeons" onBack={() => setPage('home')} />
+        return <DungeonsPage onBack={() => setPage('home')} onTeamBuilder={() => setPage('team')} />
+      case 'resonance':
+        return <ResonanceBonds onBack={() => setPage('home')} />
       default:
         return <Dashboard onNavigate={setPage} />
     }

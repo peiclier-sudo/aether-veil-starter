@@ -61,6 +61,9 @@ export interface PlayerState {
   currentTeam: Hero['id'][]
   campaignStages: CampaignStage[]
   totalSummons: number
+  arenaRating: number
+  arenaWins: number
+  arenaLosses: number
   addHero: (hero: Hero) => void
   equipGear: (heroId: string, gear: Gear) => void
   unequipGear: (heroId: string, slot: Gear['slot']) => void
@@ -76,6 +79,7 @@ export interface PlayerState {
   addEnergy: (amount: number) => void
   incrementSummons: (count: number) => void
   completeCampaignStage: (stageId: string, stars: number) => void
+  updateArenaRating: (change: number, won: boolean) => void
 }
 
 const seedHeroes: Hero[] = [
@@ -129,6 +133,9 @@ export const useGameStore = create<PlayerState>()(
       currentTeam: [],
       campaignStages: seedCampaign,
       totalSummons: 0,
+      arenaRating: 500,
+      arenaWins: 0,
+      arenaLosses: 0,
       addHero: (hero) =>
         set((state) => ({
           heroes: [...state.heroes, hero]
@@ -195,10 +202,16 @@ export const useGameStore = create<PlayerState>()(
             s.id === stageId ? { ...s, completed: true, stars: Math.max(s.stars, stars) } : s
           )
         })),
+      updateArenaRating: (change, won) =>
+        set((state) => ({
+          arenaRating: Math.max(0, state.arenaRating + change),
+          arenaWins: won ? state.arenaWins + 1 : state.arenaWins,
+          arenaLosses: won ? state.arenaLosses : state.arenaLosses + 1,
+        })),
     }),
     {
       name: 'aether-veil-storage',
-      version: 3,
+      version: 4,
       migrate: (persisted: any) => {
         const state = persisted || {}
         if (!state.heroes || state.heroes.length === 0) {
@@ -212,6 +225,15 @@ export const useGameStore = create<PlayerState>()(
         }
         if (!state.inventory) {
           state.inventory = []
+        }
+        if (state.arenaRating === undefined) {
+          state.arenaRating = 500
+        }
+        if (state.arenaWins === undefined) {
+          state.arenaWins = 0
+        }
+        if (state.arenaLosses === undefined) {
+          state.arenaLosses = 0
         }
         return state
       },
