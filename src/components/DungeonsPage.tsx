@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useGameStore, Gear } from '@/lib/store'
 import { generateGear } from '@/lib/gear-generator'
+import { heroToBattleUnit } from '@/lib/battle-engine'
+import { generateDungeonEnemies } from '@/lib/enemy-data'
+import BattlePage from './BattlePage'
 
 interface Dungeon {
   id: string
@@ -73,13 +76,6 @@ const dungeons: Dungeon[] = [
     ],
   },
 ]
-
-const gearRarityLabel: Record<string, string> = {
-  common: 'text-zinc-400',
-  rare: 'text-blue-400',
-  epic: 'text-purple-400',
-  legendary: 'text-yellow-400',
-}
 
 function DungeonCard({ dungeon, teamPower, onSelect }: { dungeon: Dungeon; teamPower: number; onSelect: () => void }) {
   const canEnter = teamPower >= dungeon.minPower
@@ -179,122 +175,40 @@ function FloorSelect({
 function DungeonBattle({
   dungeon,
   floor,
-  teamPower,
+  teamHeroes,
   onResult,
 }: {
   dungeon: Dungeon
   floor: DungeonFloor
-  teamPower: number
+  teamHeroes: any[]
   onResult: (won: boolean, shards: number, gear: Gear[]) => void
 }) {
-  const [phase, setPhase] = useState<'prep' | 'fighting' | 'result'>('prep')
-  const [won, setWon] = useState(false)
-  const [earnedShards, setEarnedShards] = useState(0)
-  const [gearDrops, setGearDrops] = useState<Gear[]>([])
+  const playerUnits = teamHeroes.map(h => heroToBattleUnit(h))
+  const enemyUnits = generateDungeonEnemies(floor.enemyPower, floor.floor)
 
-  const startBattle = () => {
-    setPhase('fighting')
-    setTimeout(() => {
-      const ratio = teamPower / floor.enemyPower
-      const luck = 0.8 + Math.random() * 0.4
-      const effective = ratio * luck
-      const battleWon = effective >= 0.7
-
-      const drops: Gear[] = []
-      let shards = 0
-      if (battleWon) {
-        shards = floor.rewards.shards
-        const difficulty = dungeon.id === 'void-rift' ? 4 : dungeon.id === 'gear-cavern' ? 3 : 2
-        for (let i = 0; i < floor.rewards.gearDrops; i++) {
-          drops.push(generateGear(difficulty))
-        }
-        if (Math.random() < floor.rewards.bonusGearChance) {
-          drops.push(generateGear(difficulty + 1))
-        }
+  const handleResult = (won: boolean) => {
+    const drops: Gear[] = []
+    let shards = 0
+    if (won) {
+      shards = floor.rewards.shards
+      const difficulty = dungeon.id === 'void-rift' ? 4 : dungeon.id === 'gear-cavern' ? 3 : 2
+      for (let i = 0; i < floor.rewards.gearDrops; i++) {
+        drops.push(generateGear(difficulty))
       }
-
-      setWon(battleWon)
-      setEarnedShards(shards)
-      setGearDrops(drops)
-      setPhase('result')
-    }, 2000)
+      if (Math.random() < floor.rewards.bonusGearChance) {
+        drops.push(generateGear(difficulty + 1))
+      }
+    }
+    onResult(won, shards, drops)
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6">
-      {phase === 'prep' && (
-        <div className="text-center space-y-6">
-          <h2 className="text-2xl font-bold text-white">{dungeon.name} - Floor {floor.floor}</h2>
-          <div className="flex items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Your Team</p>
-              <p className="text-3xl font-mono font-bold text-yellow-300">{teamPower.toLocaleString()}</p>
-            </div>
-            <span className="text-2xl text-white/30">VS</span>
-            <div className="text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Dungeon</p>
-              <p className="text-3xl font-mono font-bold text-red-400">{floor.enemyPower.toLocaleString()}</p>
-            </div>
-          </div>
-          <p className="text-xs text-white/30">⚡ {dungeon.energyCost} energy will be consumed</p>
-          <button
-            onClick={startBattle}
-            className="px-10 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl hover:brightness-110 transition text-sm"
-          >
-            FIGHT!
-          </button>
-        </div>
-      )}
-
-      {phase === 'fighting' && (
-        <div className="text-center space-y-6">
-          <div className="text-5xl animate-bounce">{dungeon.icon}</div>
-          <p className="text-lg font-bold text-white animate-pulse">Clearing Floor {floor.floor}...</p>
-          <div className="w-48 h-2 bg-white/10 rounded-full overflow-hidden mx-auto">
-            <div className="h-full bg-gradient-to-r from-red-500 to-yellow-500 rounded-full animate-[loading_2s_ease-in-out]" />
-          </div>
-        </div>
-      )}
-
-      {phase === 'result' && (
-        <div className="text-center space-y-6">
-          <div className="text-6xl">{won ? '🏆' : '💀'}</div>
-          <h2 className={`text-3xl font-bold ${won ? 'text-yellow-300' : 'text-red-400'}`}>
-            {won ? 'CLEARED!' : 'DEFEATED'}
-          </h2>
-
-          {won && (
-            <>
-              <div className="flex items-center justify-center gap-6 text-sm text-white/60">
-                <span>💎 +{earnedShards} shards</span>
-              </div>
-              {gearDrops.length > 0 && (
-                <div className="space-y-1.5 max-w-xs mx-auto">
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider">Gear Drops</p>
-                  {gearDrops.map(g => (
-                    <div key={g.id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 border border-white/10">
-                      <span className={`text-xs font-medium ${gearRarityLabel[g.rarity]}`}>{g.name}</span>
-                      <span className="text-[10px] text-white/40">{g.mainStat.type.toUpperCase()} +{g.mainStat.value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {!won && (
-            <p className="text-sm text-white/40">Power up your team and try again</p>
-          )}
-
-          <button
-            onClick={() => onResult(won, earnedShards, gearDrops)}
-            className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-xl hover:brightness-110 transition text-sm"
-          >
-            Continue
-          </button>
-        </div>
-      )}
-    </div>
+    <BattlePage
+      playerTeam={playerUnits}
+      enemyTeam={enemyUnits}
+      title={`${dungeon.name} — Floor ${floor.floor}`}
+      onResult={handleResult}
+    />
   )
 }
 
@@ -384,7 +298,7 @@ export default function DungeonsPage({ onBack, onTeamBuilder }: { onBack: () => 
         <DungeonBattle
           dungeon={battleFloor.dungeon}
           floor={battleFloor.floor}
-          teamPower={teamPower}
+          teamHeroes={teamHeroes}
           onResult={handleBattleResult}
         />
       )}

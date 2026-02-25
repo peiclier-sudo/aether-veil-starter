@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useGameStore, CampaignStage, Gear } from '@/lib/store'
 import { generateGear } from '@/lib/gear-generator'
+import { heroToBattleUnit } from '@/lib/battle-engine'
+import { generateCampaignEnemies } from '@/lib/enemy-data'
+import BattlePage from './BattlePage'
 
 const difficultyColor: Record<string, string> = {
   normal: 'text-green-400 bg-green-400/10 border-green-400/30',
@@ -68,141 +71,43 @@ function StageCard({
   )
 }
 
-const gearRarityLabel: Record<string, string> = {
-  common: 'text-zinc-400',
-  rare: 'text-blue-400',
-  epic: 'text-purple-400',
-  legendary: 'text-yellow-400',
-}
-
-function BattleScreen({
+function CampaignBattle({
   stage,
+  teamHeroes,
   teamPower,
   onResult,
 }: {
   stage: CampaignStage
+  teamHeroes: any[]
   teamPower: number
   onResult: (won: boolean, stars: number, gearDrops: Gear[]) => void
 }) {
-  const [phase, setPhase] = useState<'prep' | 'fighting' | 'result'>('prep')
-  const [won, setWon] = useState(false)
-  const [stars, setStars] = useState(0)
-  const [gearDrops, setGearDrops] = useState<Gear[]>([])
+  const playerUnits = teamHeroes.map(h => heroToBattleUnit(h))
+  const enemyUnits = generateCampaignEnemies(stage.enemyPower, stage.chapter)
 
-  const startBattle = () => {
-    setPhase('fighting')
-
-    // Simulate battle after delay
-    setTimeout(() => {
+  const handleResult = (won: boolean) => {
+    let stars = 0
+    const drops: Gear[] = []
+    if (won) {
       const ratio = teamPower / stage.enemyPower
-      const luck = 0.8 + Math.random() * 0.4 // 0.8 to 1.2
-      const effective = ratio * luck
-
-      const battleWon = effective >= 0.7
-      let battleStars = 0
-      if (battleWon) {
-        if (effective >= 1.5) battleStars = 3
-        else if (effective >= 1.1) battleStars = 2
-        else battleStars = 1
+      if (ratio >= 1.3) stars = 3
+      else if (ratio >= 0.9) stars = 2
+      else stars = 1
+      const dropCount = stars >= 3 ? 2 : 1
+      for (let i = 0; i < dropCount; i++) {
+        drops.push(generateGear(stage.chapter))
       }
-
-      // Generate gear drops on win
-      const drops: Gear[] = []
-      if (battleWon) {
-        const dropCount = battleStars >= 3 ? 2 : 1
-        for (let i = 0; i < dropCount; i++) {
-          drops.push(generateGear(stage.chapter))
-        }
-      }
-
-      setWon(battleWon)
-      setStars(battleStars)
-      setGearDrops(drops)
-      setPhase('result')
-    }, 2000)
+    }
+    onResult(won, stars, drops)
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6">
-      {phase === 'prep' && (
-        <div className="text-center space-y-6">
-          <h2 className="text-2xl font-bold text-white">{stage.name}</h2>
-          <div className="flex items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Your Team</p>
-              <p className="text-3xl font-mono font-bold text-yellow-300">{teamPower.toLocaleString()}</p>
-            </div>
-            <span className="text-2xl text-white/30">VS</span>
-            <div className="text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Enemy</p>
-              <p className="text-3xl font-mono font-bold text-red-400">{stage.enemyPower.toLocaleString()}</p>
-            </div>
-          </div>
-          <p className="text-xs text-white/30">🔋 {stage.energyCost} energy will be consumed</p>
-          <button
-            onClick={startBattle}
-            className="px-10 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl hover:brightness-110 transition text-sm"
-          >
-            FIGHT!
-          </button>
-        </div>
-      )}
-
-      {phase === 'fighting' && (
-        <div className="text-center space-y-6">
-          <div className="text-5xl animate-bounce">⚔️</div>
-          <p className="text-lg font-bold text-white animate-pulse">Battle in progress...</p>
-          <div className="w-48 h-2 bg-white/10 rounded-full overflow-hidden mx-auto">
-            <div className="h-full bg-gradient-to-r from-red-500 to-yellow-500 rounded-full animate-[loading_2s_ease-in-out]" />
-          </div>
-        </div>
-      )}
-
-      {phase === 'result' && (
-        <div className="text-center space-y-6">
-          <div className="text-6xl">{won ? '🏆' : '💀'}</div>
-          <h2 className={`text-3xl font-bold ${won ? 'text-yellow-300' : 'text-red-400'}`}>
-            {won ? 'VICTORY!' : 'DEFEATED'}
-          </h2>
-
-          {won && (
-            <>
-              <div className="flex justify-center gap-2">
-                {[1, 2, 3].map(s => (
-                  <span key={s} className={`text-3xl ${s <= stars ? 'text-yellow-400' : 'text-white/15'}`}>★</span>
-                ))}
-              </div>
-              <div className="flex items-center justify-center gap-6 text-sm text-white/60">
-                <span>💎 +{stage.rewards.shards} shards</span>
-                <span>✨ +{stage.rewards.xp} XP</span>
-              </div>
-              {gearDrops.length > 0 && (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider">Gear Drops</p>
-                  {gearDrops.map(g => (
-                    <div key={g.id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 border border-white/10">
-                      <span className={`text-xs font-medium ${gearRarityLabel[g.rarity]}`}>{g.name}</span>
-                      <span className="text-[10px] text-white/40">{g.mainStat.type.toUpperCase()} +{g.mainStat.value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {!won && (
-            <p className="text-sm text-white/40">Upgrade your team and try again</p>
-          )}
-
-          <button
-            onClick={() => onResult(won, stars, gearDrops)}
-            className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-xl hover:brightness-110 transition text-sm"
-          >
-            Continue
-          </button>
-        </div>
-      )}
-    </div>
+    <BattlePage
+      playerTeam={playerUnits}
+      enemyTeam={enemyUnits}
+      title={`Campaign: ${stage.name}`}
+      onResult={handleResult}
+    />
   )
 }
 
@@ -312,8 +217,9 @@ export default function CampaignPage({ onBack, onTeamBuilder }: { onBack: () => 
 
       {/* Battle overlay */}
       {battleStage && (
-        <BattleScreen
+        <CampaignBattle
           stage={battleStage}
+          teamHeroes={teamHeroes}
           teamPower={teamPower}
           onResult={handleBattleResult}
         />

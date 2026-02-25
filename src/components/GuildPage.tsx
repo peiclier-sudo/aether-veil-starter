@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { useGameStore } from '@/lib/store'
 import { GUILD_PERKS, GUILD_CREATION_COST } from '@/lib/guild-data'
+import { heroToBattleUnit } from '@/lib/battle-engine'
+import { generateGuildBossUnit } from '@/lib/enemy-data'
+import BattlePage from './BattlePage'
 
 export default function GuildPage({ onBack }: { onBack: () => void }) {
   const { guild, aetherShards, createGuild, donateToGuild, attackGuildBoss, heroes, currentTeam } = useGameStore()
   const [guildName, setGuildName] = useState('')
   const [donateAmount, setDonateAmount] = useState(100)
   const [attackResult, setAttackResult] = useState<{ killed: boolean; reward: number; damage: number } | null>(null)
+  const [bossBattle, setBossBattle] = useState(false)
 
-  const teamPower = currentTeam.reduce((sum, id) => {
-    const h = heroes.find(hero => hero.id === id)
-    return sum + (h?.power || 0)
-  }, 0)
+  const teamHeroes = currentTeam.map(id => heroes.find(hero => hero.id === id)).filter(Boolean)
+  const teamPower = teamHeroes.reduce((sum, h) => sum + (h?.power || 0), 0)
 
   const handleCreate = () => {
     if (guildName.trim().length < 2) return
@@ -23,10 +25,23 @@ export default function GuildPage({ onBack }: { onBack: () => void }) {
   }
 
   const handleAttack = () => {
-    if (!guild || teamPower === 0) return
-    const damage = Math.round(teamPower * (0.8 + Math.random() * 0.4))
-    const result = attackGuildBoss(damage)
-    setAttackResult({ ...result, damage })
+    if (!guild || teamPower === 0 || currentTeam.length === 0) return
+    setBossBattle(true)
+  }
+
+  const handleBossResult = (won: boolean) => {
+    setBossBattle(false)
+    if (!guild) return
+    if (won) {
+      const damage = guild.boss.hp // killed the boss
+      const result = attackGuildBoss(damage)
+      setAttackResult({ ...result, damage })
+    } else {
+      // Partial damage on loss
+      const damage = Math.round(guild.boss.maxHp * 0.15)
+      const result = attackGuildBoss(damage)
+      setAttackResult({ ...result, damage })
+    }
     setTimeout(() => setAttackResult(null), 2500)
   }
 
@@ -212,6 +227,16 @@ export default function GuildPage({ onBack }: { onBack: () => void }) {
           </div>
         </div>
       </div>
+
+      {/* Boss battle overlay */}
+      {bossBattle && guild && (
+        <BattlePage
+          playerTeam={teamHeroes.map(h => heroToBattleUnit(h as any))}
+          enemyTeam={generateGuildBossUnit(guild.boss.name, guild.boss.hp, guild.boss.maxHp)}
+          title={`Guild Boss: ${guild.boss.name}`}
+          onResult={handleBossResult}
+        />
+      )}
 
       {/* Attack result overlay */}
       {attackResult && (

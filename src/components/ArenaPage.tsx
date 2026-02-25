@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useGameStore, Gear } from '@/lib/store'
 import { generateGear } from '@/lib/gear-generator'
+import { heroToBattleUnit } from '@/lib/battle-engine'
+import { generateArenaEnemies } from '@/lib/enemy-data'
+import BattlePage from './BattlePage'
 
 interface ArenaOpponent {
   id: string
@@ -49,116 +52,40 @@ function generateOpponents(teamPower: number, arenaRating: number): ArenaOpponen
 
 function ArenaBattle({
   opponent,
+  teamHeroes,
   teamPower,
+  arenaRating,
   onResult,
 }: {
   opponent: ArenaOpponent
+  teamHeroes: any[]
   teamPower: number
+  arenaRating: number
   onResult: (won: boolean, ratingChange: number, gear: Gear[]) => void
 }) {
-  const [phase, setPhase] = useState<'prep' | 'fighting' | 'result'>('prep')
-  const [won, setWon] = useState(false)
-  const [ratingChange, setRatingChange] = useState(0)
-  const [gearDrops, setGearDrops] = useState<Gear[]>([])
+  const playerUnits = teamHeroes.map(h => heroToBattleUnit(h))
+  const enemyUnits = generateArenaEnemies(opponent.teamPower, arenaRating)
 
-  const startBattle = () => {
-    setPhase('fighting')
-    setTimeout(() => {
-      const ratio = teamPower / opponent.teamPower
-      const luck = 0.8 + Math.random() * 0.4
-      const effective = ratio * luck
-      const battleWon = effective >= 0.85
-
-      let change = 0
-      const drops: Gear[] = []
-      if (battleWon) {
-        const underdog = opponent.teamPower > teamPower ? 1.5 : 1
-        change = Math.round((15 + Math.random() * 15) * underdog)
-        if (Math.random() < 0.3) {
-          drops.push(generateGear(3))
-        }
-      } else {
-        change = -Math.round(8 + Math.random() * 12)
-      }
-
-      setWon(battleWon)
-      setRatingChange(change)
-      setGearDrops(drops)
-      setPhase('result')
-    }, 2500)
+  const handleResult = (won: boolean) => {
+    let change = 0
+    const drops: Gear[] = []
+    if (won) {
+      const underdog = opponent.teamPower > teamPower ? 1.5 : 1
+      change = Math.round((15 + Math.random() * 15) * underdog)
+      if (Math.random() < 0.3) drops.push(generateGear(3))
+    } else {
+      change = -Math.round(8 + Math.random() * 12)
+    }
+    onResult(won, change, drops)
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6">
-      {phase === 'prep' && (
-        <div className="text-center space-y-6">
-          <h2 className="text-2xl font-bold text-white">Arena Challenge</h2>
-          <div className="flex items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">You</p>
-              <p className="text-3xl font-mono font-bold text-yellow-300">{teamPower.toLocaleString()}</p>
-            </div>
-            <span className="text-2xl text-white/30">VS</span>
-            <div className="text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">{opponent.name}</p>
-              <p className="text-3xl font-mono font-bold text-red-400">{opponent.teamPower.toLocaleString()}</p>
-            </div>
-          </div>
-          <button
-            onClick={startBattle}
-            className="px-10 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl hover:brightness-110 transition text-sm"
-          >
-            FIGHT!
-          </button>
-        </div>
-      )}
-
-      {phase === 'fighting' && (
-        <div className="text-center space-y-6">
-          <div className="text-5xl animate-bounce">🏟️</div>
-          <p className="text-lg font-bold text-white animate-pulse">Arena battle in progress...</p>
-          <div className="w-48 h-2 bg-white/10 rounded-full overflow-hidden mx-auto">
-            <div className="h-full bg-gradient-to-r from-red-500 to-yellow-500 rounded-full animate-[loading_2.5s_ease-in-out]" />
-          </div>
-        </div>
-      )}
-
-      {phase === 'result' && (
-        <div className="text-center space-y-6">
-          <div className="text-6xl">{won ? '🏆' : '💀'}</div>
-          <h2 className={`text-3xl font-bold ${won ? 'text-yellow-300' : 'text-red-400'}`}>
-            {won ? 'VICTORY!' : 'DEFEATED'}
-          </h2>
-
-          <div className={`text-lg font-mono font-bold ${ratingChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {ratingChange >= 0 ? '+' : ''}{ratingChange} Rating
-          </div>
-
-          {won && gearDrops.length > 0 && (
-            <div className="space-y-1.5 max-w-xs mx-auto">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Bonus Gear Drop</p>
-              {gearDrops.map(g => (
-                <div key={g.id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 border border-white/10">
-                  <span className="text-xs font-medium text-purple-400">{g.name}</span>
-                  <span className="text-[10px] text-white/40">{g.mainStat.type.toUpperCase()} +{g.mainStat.value}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!won && (
-            <p className="text-sm text-white/40">Strengthen your team and try again</p>
-          )}
-
-          <button
-            onClick={() => onResult(won, ratingChange, gearDrops)}
-            className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-xl hover:brightness-110 transition text-sm"
-          >
-            Continue
-          </button>
-        </div>
-      )}
-    </div>
+    <BattlePage
+      playerTeam={playerUnits}
+      enemyTeam={enemyUnits}
+      title={`Arena: vs ${opponent.name}`}
+      onResult={handleResult}
+    />
   )
 }
 
@@ -304,7 +231,9 @@ export default function ArenaPage({ onBack, onTeamBuilder }: { onBack: () => voi
       {battleOpponent && (
         <ArenaBattle
           opponent={battleOpponent}
+          teamHeroes={teamHeroes}
           teamPower={teamPower}
+          arenaRating={arenaRating}
           onResult={handleBattleResult}
         />
       )}
