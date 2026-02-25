@@ -89,14 +89,11 @@ function FeaturedHero({ hero, onViewRoster }: { hero: any; onViewRoster: () => v
           </div>
 
           <div className="flex gap-3">
-            <button className="px-5 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold text-sm rounded-lg hover:brightness-110 transition">
-              Level Up
-            </button>
             <button
               onClick={onViewRoster}
-              className="px-5 py-2.5 border border-white/20 text-white/80 text-sm rounded-lg hover:bg-white/5 transition"
+              className="px-5 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold text-sm rounded-lg hover:brightness-110 transition"
             >
-              View Roster
+              View Details
             </button>
           </div>
         </div>

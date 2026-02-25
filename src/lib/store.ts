@@ -63,6 +63,10 @@ export interface PlayerState {
   totalSummons: number
   addHero: (hero: Hero) => void
   equipGear: (heroId: string, gear: Gear) => void
+  unequipGear: (heroId: string, slot: Gear['slot']) => void
+  addToInventory: (gear: Gear) => void
+  removeFromInventory: (gearId: string) => void
+  levelUpHero: (heroId: string, statUpdates: Partial<Hero>) => void
   createResonanceBond: (bond: ResonanceBond) => void
   setCurrentTeam: (teamIds: Hero['id'][]) => void
   updateHeroLevel: (heroId: string, newLevel: number) => void
@@ -135,7 +139,31 @@ export const useGameStore = create<PlayerState>()(
             hero.id === heroId
               ? { ...hero, equippedGear: { ...hero.equippedGear, [gear.slot]: gear } }
               : hero
-          )
+          ),
+          inventory: state.inventory.filter((g) => g.id !== gear.id),
+        })),
+      unequipGear: (heroId, slot) =>
+        set((state) => {
+          const hero = state.heroes.find((h) => h.id === heroId)
+          const gear = hero?.equippedGear[slot]
+          return {
+            heroes: state.heroes.map((h) =>
+              h.id === heroId
+                ? { ...h, equippedGear: { ...h.equippedGear, [slot]: undefined } }
+                : h
+            ),
+            inventory: gear ? [...state.inventory, gear] : state.inventory,
+          }
+        }),
+      addToInventory: (gear) =>
+        set((state) => ({ inventory: [...state.inventory, gear] })),
+      removeFromInventory: (gearId) =>
+        set((state) => ({ inventory: state.inventory.filter((g) => g.id !== gearId) })),
+      levelUpHero: (heroId, statUpdates) =>
+        set((state) => ({
+          heroes: state.heroes.map((hero) =>
+            hero.id === heroId ? { ...hero, ...statUpdates } : hero
+          ),
         })),
       createResonanceBond: (bond) =>
         set((state) => ({
@@ -170,15 +198,22 @@ export const useGameStore = create<PlayerState>()(
     }),
     {
       name: 'aether-veil-storage',
-      version: 2,
+      version: 3,
       migrate: (persisted: any) => {
-        if (!persisted?.heroes || persisted.heroes.length === 0) {
-          return { ...persisted, heroes: seedHeroes, campaignStages: seedCampaign, totalSummons: 0 }
+        const state = persisted || {}
+        if (!state.heroes || state.heroes.length === 0) {
+          state.heroes = seedHeroes
         }
-        if (!persisted?.campaignStages) {
-          return { ...persisted, campaignStages: seedCampaign, totalSummons: persisted.totalSummons ?? 0 }
+        if (!state.campaignStages) {
+          state.campaignStages = seedCampaign
         }
-        return persisted
+        if (state.totalSummons === undefined) {
+          state.totalSummons = 0
+        }
+        if (!state.inventory) {
+          state.inventory = []
+        }
+        return state
       },
     }
   )

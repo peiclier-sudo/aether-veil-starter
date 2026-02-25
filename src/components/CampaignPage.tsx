@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useGameStore, CampaignStage } from '@/lib/store'
+import { useGameStore, CampaignStage, Gear } from '@/lib/store'
+import { generateGear } from '@/lib/gear-generator'
 
 const difficultyColor: Record<string, string> = {
   normal: 'text-green-400 bg-green-400/10 border-green-400/30',
@@ -67,6 +68,13 @@ function StageCard({
   )
 }
 
+const gearRarityLabel: Record<string, string> = {
+  common: 'text-zinc-400',
+  rare: 'text-blue-400',
+  epic: 'text-purple-400',
+  legendary: 'text-yellow-400',
+}
+
 function BattleScreen({
   stage,
   teamPower,
@@ -74,11 +82,12 @@ function BattleScreen({
 }: {
   stage: CampaignStage
   teamPower: number
-  onResult: (won: boolean, stars: number) => void
+  onResult: (won: boolean, stars: number, gearDrops: Gear[]) => void
 }) {
   const [phase, setPhase] = useState<'prep' | 'fighting' | 'result'>('prep')
   const [won, setWon] = useState(false)
   const [stars, setStars] = useState(0)
+  const [gearDrops, setGearDrops] = useState<Gear[]>([])
 
   const startBattle = () => {
     setPhase('fighting')
@@ -97,8 +106,18 @@ function BattleScreen({
         else battleStars = 1
       }
 
+      // Generate gear drops on win
+      const drops: Gear[] = []
+      if (battleWon) {
+        const dropCount = battleStars >= 3 ? 2 : 1
+        for (let i = 0; i < dropCount; i++) {
+          drops.push(generateGear(stage.chapter))
+        }
+      }
+
       setWon(battleWon)
       setStars(battleStars)
+      setGearDrops(drops)
       setPhase('result')
     }, 2000)
   }
@@ -157,6 +176,17 @@ function BattleScreen({
                 <span>💎 +{stage.rewards.shards} shards</span>
                 <span>✨ +{stage.rewards.xp} XP</span>
               </div>
+              {gearDrops.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-white/40 uppercase tracking-wider">Gear Drops</p>
+                  {gearDrops.map(g => (
+                    <div key={g.id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 border border-white/10">
+                      <span className={`text-xs font-medium ${gearRarityLabel[g.rarity]}`}>{g.name}</span>
+                      <span className="text-[10px] text-white/40">{g.mainStat.type.toUpperCase()} +{g.mainStat.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
 
@@ -165,7 +195,7 @@ function BattleScreen({
           )}
 
           <button
-            onClick={() => onResult(won, stars)}
+            onClick={() => onResult(won, stars, gearDrops)}
             className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold rounded-xl hover:brightness-110 transition text-sm"
           >
             Continue
@@ -177,7 +207,7 @@ function BattleScreen({
 }
 
 export default function CampaignPage({ onBack, onTeamBuilder }: { onBack: () => void; onTeamBuilder: () => void }) {
-  const { campaignStages, currentTeam, heroes, energy, spendEnergy, addShards, completeCampaignStage } = useGameStore()
+  const { campaignStages, currentTeam, heroes, energy, spendEnergy, addShards, completeCampaignStage, addToInventory } = useGameStore()
   const [battleStage, setBattleStage] = useState<CampaignStage | null>(null)
 
   const teamHeroes = currentTeam.map(id => heroes.find(h => h.id === id)).filter(Boolean)
@@ -215,12 +245,13 @@ export default function CampaignPage({ onBack, onTeamBuilder }: { onBack: () => 
     setBattleStage(stage)
   }
 
-  const handleBattleResult = (won: boolean, stars: number) => {
+  const handleBattleResult = (won: boolean, stars: number, gearDrops: Gear[]) => {
     if (battleStage) {
       spendEnergy(battleStage.energyCost)
       if (won) {
         completeCampaignStage(battleStage.id, stars)
         addShards(battleStage.rewards.shards)
+        gearDrops.forEach(g => addToInventory(g))
       }
     }
     setBattleStage(null)
