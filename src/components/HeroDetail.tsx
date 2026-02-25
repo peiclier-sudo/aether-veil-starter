@@ -3,6 +3,8 @@ import { useGameStore, Hero, Gear } from '@/lib/store'
 import { generateHeroPortrait } from '@/lib/hero-portraits'
 import { getLevelUpCost, getMaxLevel, computeLevelUpStats } from '@/lib/leveling'
 import { getGearStatBonuses } from '@/lib/gear-generator'
+import { getSkillUpgradeCost, MAX_SKILL_LEVEL, getUpgradedCooldown } from '@/lib/skill-upgrades'
+import { defaultStarsByRarity } from '@/lib/ascension'
 
 const rarityBadgeColor: Record<string, string> = {
   common:    'bg-zinc-600 text-zinc-200',
@@ -142,11 +144,10 @@ function GearPickerModal({
 }
 
 export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero; onClose: () => void }) {
-  const { heroes, aetherShards, spendShards, levelUpHero, unequipGear } = useGameStore()
-  // Re-read hero from store so we see live updates
+  const { heroes, aetherShards, spendShards, levelUpHero, unequipGear, upgradeSkill } = useGameStore()
   const hero = heroes.find(h => h.id === initialHero.id) || initialHero
 
-  const [tab, setTab] = useState<'stats' | 'gear'>('stats')
+  const [tab, setTab] = useState<'stats' | 'gear' | 'skills'>('stats')
   const [gearPickerSlot, setGearPickerSlot] = useState<Gear['slot'] | null>(null)
 
   const portrait = useMemo(
@@ -154,7 +155,8 @@ export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero;
     [hero.name, hero.faction, hero.rarity, hero.role]
   )
 
-  const maxLevel = getMaxLevel(hero.rarity)
+  const heroStars = hero.stars || defaultStarsByRarity[hero.rarity] || 1
+  const maxLevel = getMaxLevel(hero.rarity, heroStars)
   const isMaxLevel = hero.level >= maxLevel
   const levelCost = getLevelUpCost(hero.level, hero.rarity)
   const canAfford = aetherShards >= levelCost
@@ -194,6 +196,9 @@ export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero;
               {hero.rarity}
             </span>
             <span className="text-[10px] text-white/40 uppercase tracking-wider">{hero.role}</span>
+            <span className="text-yellow-400 text-xs drop-shadow-[0_0_4px_#fcd34d]">
+              {'★'.repeat(heroStars)}
+            </span>
           </div>
           <h2 className="text-2xl font-bold text-white">{hero.name}</h2>
           <p className="text-sm text-purple-300/70">{hero.faction}</p>
@@ -245,6 +250,14 @@ export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero;
           >
             Gear ({equippedCount}/8)
           </button>
+          <button
+            onClick={() => setTab('skills')}
+            className={`flex-1 py-2 text-xs font-medium transition border-b-2 ${
+              tab === 'skills' ? 'text-white border-yellow-400' : 'text-white/40 border-transparent'
+            }`}
+          >
+            Skills
+          </button>
         </div>
 
         {/* Tab content */}
@@ -287,18 +300,6 @@ export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero;
                 </div>
               )}
 
-              {/* Skills */}
-              <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Skills</p>
-                <div className="space-y-1.5">
-                  {hero.skills.map(skill => (
-                    <div key={skill.name} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 border border-white/5">
-                      <span className="text-xs text-white">{skill.name}</span>
-                      <span className="text-[10px] text-white/40">CD: {skill.cooldown}s</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
@@ -313,6 +314,54 @@ export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero;
                   onUnequip={() => unequipGear(hero.id, slot)}
                 />
               ))}
+            </div>
+          )}
+
+          {tab === 'skills' && (
+            <div className="space-y-3">
+              {hero.skills.map((skill, idx) => {
+                const skillLevel = skill.level || 1
+                const isMax = skillLevel >= MAX_SKILL_LEVEL
+                const cost = getSkillUpgradeCost(skillLevel, hero.rarity)
+                const canAfford = aetherShards >= cost
+                const baseCd = skill.cooldown + (skillLevel - 1) * 0.5
+                const nextCd = isMax ? skill.cooldown : getUpgradedCooldown(baseCd, skillLevel + 1)
+                return (
+                  <div key={skill.name} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-bold text-white">{skill.name}</h4>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-white/60">
+                        Lv.{skillLevel}/{MAX_SKILL_LEVEL}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 mb-3 text-xs text-white/50">
+                      <span>CD: {skill.cooldown.toFixed(1)}s</span>
+                      {!isMax && (
+                        <span className="text-green-400">→ {nextCd.toFixed(1)}s</span>
+                      )}
+                    </div>
+                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-3">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
+                        style={{ width: `${(skillLevel / MAX_SKILL_LEVEL) * 100}%` }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => upgradeSkill(hero.id, idx)}
+                      disabled={isMax || !canAfford}
+                      className={`w-full py-2 rounded-lg text-xs font-bold transition-all ${
+                        isMax
+                          ? 'bg-white/5 text-white/30 cursor-default'
+                          : canAfford
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:brightness-110'
+                            : 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'
+                      }`}
+                    >
+                      {isMax ? 'MAX LEVEL' : `Upgrade — 💎 ${cost}`}
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

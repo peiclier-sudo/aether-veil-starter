@@ -87,8 +87,10 @@ export function summonHero(): Hero {
   const heroSkills = Array.from({ length: skillCount }, () => ({
     name: pick(skillNames[role]),
     cooldown: Math.floor(Math.random() * 5) + 2,
+    level: 1,
   }))
 
+  const starsByRarity: Record<string, number> = { common: 1, rare: 2, epic: 3, legendary: 5 }
   summonCounter++
   return {
     id: `summon-${Date.now()}-${summonCounter}`,
@@ -97,6 +99,7 @@ export function summonHero(): Hero {
     rarity,
     role,
     ...stats,
+    stars: starsByRarity[rarity] || 1,
     glbUrl: '',
     equippedGear: {},
     skills: heroSkills,
@@ -123,7 +126,8 @@ export function summonMultiple(count: number): Hero[] {
       rarity: rarity as Hero['rarity'],
       role,
       ...stats,
-      skills: [{ name: pick(skillNames[role]), cooldown: Math.floor(Math.random() * 5) + 2 }],
+      stars: rarity === 'epic' ? 3 : 2,
+      skills: [{ name: pick(skillNames[role]), cooldown: Math.floor(Math.random() * 5) + 2, level: 1 }],
     }
   }
   return heroes

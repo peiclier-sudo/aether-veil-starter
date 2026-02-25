@@ -16,7 +16,7 @@ const rarityBadgeColor: Record<string, string> = {
   legendary: 'bg-yellow-500 text-black font-bold',
 }
 
-const rarityStars: Record<string, number> = {
+const defaultStars: Record<string, number> = {
   common: 1,
   rare: 2,
   epic: 3,
@@ -70,7 +70,7 @@ export default function HeroCard({ hero, onClick, compact }: { hero: Hero; onCli
         {/* Stars + role */}
         <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-2 z-10">
           <div className="flex gap-0.5">
-            {Array.from({ length: rarityStars[hero.rarity] || 1 }).map((_, i) => (
+            {Array.from({ length: hero.stars || defaultStars[hero.rarity] || 1 }).map((_, i) => (
               <span key={i} className="text-yellow-400 text-[10px] drop-shadow-[0_0_4px_#fcd34d]">★</span>
             ))}
           </div>

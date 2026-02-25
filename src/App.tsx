@@ -7,6 +7,11 @@ import CampaignPage from './components/CampaignPage'
 import DungeonsPage from './components/DungeonsPage'
 import ArenaPage from './components/ArenaPage'
 import ResonanceBonds from './components/ResonanceBonds'
+import AscensionPage from './components/AscensionPage'
+import ShopPage from './components/ShopPage'
+import InventoryPage from './components/InventoryPage'
+import AchievementsPage from './components/AchievementsPage'
+import GuildPage from './components/GuildPage'
 
 const navItems = [
   { id: 'home', label: 'Home', icon: '🏠' },
@@ -37,6 +42,16 @@ function App() {
         return <DungeonsPage onBack={() => setPage('home')} onTeamBuilder={() => setPage('team')} />
       case 'resonance':
         return <ResonanceBonds onBack={() => setPage('home')} />
+      case 'ascension':
+        return <AscensionPage onBack={() => setPage('home')} />
+      case 'shop':
+        return <ShopPage onBack={() => setPage('home')} />
+      case 'inventory':
+        return <InventoryPage onBack={() => setPage('home')} />
+      case 'achievements':
+        return <AchievementsPage onBack={() => setPage('home')} />
+      case 'guild':
+        return <GuildPage onBack={() => setPage('home')} />
       default:
         return <Dashboard onNavigate={setPage} />
     }

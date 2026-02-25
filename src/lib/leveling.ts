@@ -21,8 +21,13 @@ export function getLevelUpCost(currentLevel: number, rarity: string): number {
   return Math.round(base * currentLevel * mult)
 }
 
-export function getMaxLevel(rarity: string): number {
-  return maxLevelByRarity[rarity] || 40
+const defaultStarsByRarity: Record<string, number> = { common: 1, rare: 2, epic: 3, legendary: 5 }
+
+export function getMaxLevel(rarity: string, stars?: number): number {
+  const base = maxLevelByRarity[rarity] || 40
+  const defaultStar = defaultStarsByRarity[rarity] || 1
+  const bonusStars = Math.max(0, (stars || defaultStar) - defaultStar)
+  return base + bonusStars * 5
 }
 
 /** Compute new stats after leveling up once */
