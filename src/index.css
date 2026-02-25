@@ -26,3 +26,9 @@ select option {
   background: #1a1028;
   color: white;
 }
+
+/* Battle loading bar animation */
+@keyframes loading {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}

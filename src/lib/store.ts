@@ -37,6 +37,19 @@ export interface Hero {
   skills: Array<{ name: string; cooldown: number }>
 }
 
+export interface CampaignStage {
+  id: string
+  chapter: number
+  stage: number
+  name: string
+  difficulty: 'normal' | 'hard' | 'nightmare'
+  enemyPower: number
+  energyCost: number
+  completed: boolean
+  stars: number // 0-3
+  rewards: { shards: number; xp: number }
+}
+
 export interface PlayerState {
   playerName: string
   level: number
@@ -46,11 +59,19 @@ export interface PlayerState {
   inventory: Gear[]
   activeResonanceBonds: ResonanceBond[]
   currentTeam: Hero['id'][]
+  campaignStages: CampaignStage[]
+  totalSummons: number
   addHero: (hero: Hero) => void
   equipGear: (heroId: string, gear: Gear) => void
   createResonanceBond: (bond: ResonanceBond) => void
   setCurrentTeam: (teamIds: Hero['id'][]) => void
   updateHeroLevel: (heroId: string, newLevel: number) => void
+  spendShards: (amount: number) => boolean
+  spendEnergy: (amount: number) => boolean
+  addShards: (amount: number) => void
+  addEnergy: (amount: number) => void
+  incrementSummons: (count: number) => void
+  completeCampaignStage: (stageId: string, stars: number) => void
 }
 
 const seedHeroes: Hero[] = [
@@ -76,9 +97,24 @@ const seedHeroes: Hero[] = [
   { id: 'h20', name: 'Mossveil',   faction: 'Veil Walkers',      rarity: 'common',    role: 'support',    level: 10, power: 1600,  hp: 7500,  atk: 1100, def: 1100, spd: 110, glbUrl: '', equippedGear: {}, skills: [{ name: 'Mist Wrap', cooldown: 3 }] },
 ]
 
+const seedCampaign: CampaignStage[] = [
+  { id: 'c1-1', chapter: 1, stage: 1, name: 'Shattered Dawn',       difficulty: 'normal', enemyPower: 1500,  energyCost: 6,  completed: false, stars: 0, rewards: { shards: 30,  xp: 100 } },
+  { id: 'c1-2', chapter: 1, stage: 2, name: 'Whispering Ruins',     difficulty: 'normal', enemyPower: 2000,  energyCost: 6,  completed: false, stars: 0, rewards: { shards: 35,  xp: 120 } },
+  { id: 'c1-3', chapter: 1, stage: 3, name: 'Hollow Gate',          difficulty: 'normal', enemyPower: 2500,  energyCost: 8,  completed: false, stars: 0, rewards: { shards: 40,  xp: 150 } },
+  { id: 'c1-4', chapter: 1, stage: 4, name: 'The First Echo',       difficulty: 'normal', enemyPower: 3200,  energyCost: 8,  completed: false, stars: 0, rewards: { shards: 60,  xp: 200 } },
+  { id: 'c2-1', chapter: 2, stage: 1, name: 'Veil Crossing',        difficulty: 'normal', enemyPower: 3800,  energyCost: 8,  completed: false, stars: 0, rewards: { shards: 45,  xp: 180 } },
+  { id: 'c2-2', chapter: 2, stage: 2, name: 'Obsidian Depths',      difficulty: 'normal', enemyPower: 4500,  energyCost: 10, completed: false, stars: 0, rewards: { shards: 50,  xp: 200 } },
+  { id: 'c2-3', chapter: 2, stage: 3, name: 'Storm Spire',          difficulty: 'normal', enemyPower: 5200,  energyCost: 10, completed: false, stars: 0, rewards: { shards: 55,  xp: 220 } },
+  { id: 'c2-4', chapter: 2, stage: 4, name: 'Resonance Breach',     difficulty: 'normal', enemyPower: 6000,  energyCost: 12, completed: false, stars: 0, rewards: { shards: 80,  xp: 300 } },
+  { id: 'c3-1', chapter: 3, stage: 1, name: 'Aether Wastes',        difficulty: 'hard',   enemyPower: 7000,  energyCost: 12, completed: false, stars: 0, rewards: { shards: 70,  xp: 350 } },
+  { id: 'c3-2', chapter: 3, stage: 2, name: 'Throne of Echoes',     difficulty: 'hard',   enemyPower: 8500,  energyCost: 14, completed: false, stars: 0, rewards: { shards: 85,  xp: 400 } },
+  { id: 'c3-3', chapter: 3, stage: 3, name: 'Luminara\'s Shadow',   difficulty: 'hard',   enemyPower: 10000, energyCost: 14, completed: false, stars: 0, rewards: { shards: 100, xp: 500 } },
+  { id: 'c3-4', chapter: 3, stage: 4, name: 'The Veil Unravels',    difficulty: 'hard',   enemyPower: 12000, energyCost: 16, completed: false, stars: 0, rewards: { shards: 150, xp: 600 } },
+]
+
 export const useGameStore = create<PlayerState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       playerName: 'Echo Warden',
       level: 1,
       aetherShards: 2500,
@@ -87,6 +123,8 @@ export const useGameStore = create<PlayerState>()(
       inventory: [],
       activeResonanceBonds: [],
       currentTeam: [],
+      campaignStages: seedCampaign,
+      totalSummons: 0,
       addHero: (hero) =>
         set((state) => ({
           heroes: [...state.heroes, hero]
@@ -107,14 +145,38 @@ export const useGameStore = create<PlayerState>()(
       updateHeroLevel: (heroId, newLevel) =>
         set((state) => ({
           heroes: state.heroes.map((hero) => (hero.id === heroId ? { ...hero, level: newLevel } : hero))
-        }))
+        })),
+      spendShards: (amount) => {
+        const current = get().aetherShards
+        if (current < amount) return false
+        set({ aetherShards: current - amount })
+        return true
+      },
+      spendEnergy: (amount) => {
+        const current = get().energy
+        if (current < amount) return false
+        set({ energy: current - amount })
+        return true
+      },
+      addShards: (amount) => set((state) => ({ aetherShards: state.aetherShards + amount })),
+      addEnergy: (amount) => set((state) => ({ energy: Math.min(state.energy + amount, 120) })),
+      incrementSummons: (count) => set((state) => ({ totalSummons: state.totalSummons + count })),
+      completeCampaignStage: (stageId, stars) =>
+        set((state) => ({
+          campaignStages: state.campaignStages.map((s) =>
+            s.id === stageId ? { ...s, completed: true, stars: Math.max(s.stars, stars) } : s
+          )
+        })),
     }),
     {
       name: 'aether-veil-storage',
-      version: 1,
+      version: 2,
       migrate: (persisted: any) => {
         if (!persisted?.heroes || persisted.heroes.length === 0) {
-          return { ...persisted, heroes: seedHeroes }
+          return { ...persisted, heroes: seedHeroes, campaignStages: seedCampaign, totalSummons: 0 }
+        }
+        if (!persisted?.campaignStages) {
+          return { ...persisted, campaignStages: seedCampaign, totalSummons: persisted.totalSummons ?? 0 }
         }
         return persisted
       },
