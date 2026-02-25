@@ -1,6 +1,6 @@
 /**
  * Turn-based Battle Engine
- * Handles initiative, damage, skills, status effects, and AI
+ * Based on docs/combat-system.md v1.1 — Cooldown-based, turn-meter initiative
  */
 
 export type Faction = 'Dawn Sentinels' | 'Veil Walkers' | 'Obsidian Pact' | 'Stormborn'
@@ -15,11 +15,11 @@ export interface StatusEffect {
 
 export interface BattleSkill {
   name: string
-  cooldown: number // base cooldown
+  cooldown: number // base cooldown in turns
   currentCd: number // turns until available (0 = ready)
   level: number
   type: 'damage' | 'heal' | 'buff' | 'debuff' | 'aoe_damage' | 'aoe_heal'
-  multiplier: number // % of ATK or heal amount
+  multiplier: number // skill multiplier applied to ATK
   statusEffect?: { type: StatusType; chance: number; duration: number; value: number }
   targetType: 'enemy' | 'ally' | 'self' | 'all_enemies' | 'all_allies'
   description: string
@@ -31,21 +31,24 @@ export interface BattleUnit {
   faction: string
   role: string
   isEnemy: boolean
-  // Stats
+  // Stats — per combat-system.md §1
   maxHp: number
   currentHp: number
   atk: number
   def: number
   spd: number
-  critRate: number // 0-100
-  critDmg: number // multiplier e.g. 1.5
+  critRate: number // 0-100 (percentage)
+  critDmg: number // percentage, e.g. 150 = 1.5× — per doc table
+  acc: number // accuracy stat — per doc
+  res: number // resistance stat — per doc
+  turnMeter: number // 0-100, acts at 100 — per doc §2
   // Combat state
   skills: BattleSkill[]
   statusEffects: StatusEffect[]
   isAlive: boolean
   // Visual
-  modelId: string // placeholder for 3D model reference
-  portraitId: string // placeholder for portrait asset
+  modelId: string // PLACEHOLDER — replace with actual 3D model path
+  portraitId: string // PLACEHOLDER — replace with actual portrait path
   rarity: string
 }
 
@@ -66,7 +69,7 @@ export interface BattleAction {
 
 export interface BattleState {
   turn: number
-  turnOrder: string[] // unit IDs in turn order
+  turnOrder: string[] // unit IDs in turn order for current round
   currentUnitIndex: number
   playerTeam: BattleUnit[]
   enemyTeam: BattleUnit[]
@@ -75,18 +78,61 @@ export interface BattleState {
   autoMode: boolean
 }
 
-// Faction advantage matrix: attacker faction → defender faction → bonus multiplier
+// ------------------------------------------------------------------
+// Faction affinity — per doc §3: 1.3 advantage, 0.7 disadvantage, 1.0 neutral
+// ------------------------------------------------------------------
 const FACTION_ADVANTAGE: Record<string, Record<string, number>> = {
-  'Dawn Sentinels': { 'Veil Walkers': 1.2, 'Obsidian Pact': 0.9, 'Stormborn': 1.0, 'Dawn Sentinels': 1.0 },
-  'Veil Walkers': { 'Obsidian Pact': 1.2, 'Dawn Sentinels': 0.9, 'Stormborn': 1.0, 'Veil Walkers': 1.0 },
-  'Obsidian Pact': { 'Stormborn': 1.2, 'Veil Walkers': 0.9, 'Dawn Sentinels': 1.0, 'Obsidian Pact': 1.0 },
-  'Stormborn': { 'Dawn Sentinels': 1.2, 'Obsidian Pact': 0.9, 'Veil Walkers': 1.0, 'Stormborn': 1.0 },
+  'Dawn Sentinels': { 'Veil Walkers': 1.3, 'Obsidian Pact': 0.7, 'Stormborn': 1.0, 'Dawn Sentinels': 1.0 },
+  'Veil Walkers': { 'Obsidian Pact': 1.3, 'Dawn Sentinels': 0.7, 'Stormborn': 1.0, 'Veil Walkers': 1.0 },
+  'Obsidian Pact': { 'Stormborn': 1.3, 'Veil Walkers': 0.7, 'Dawn Sentinels': 1.0, 'Obsidian Pact': 1.0 },
+  'Stormborn': { 'Dawn Sentinels': 1.3, 'Obsidian Pact': 0.7, 'Veil Walkers': 1.0, 'Stormborn': 1.0 },
 }
 
-function getFactionBonus(attackerFaction: string, defenderFaction: string): number {
+function getAffinityMultiplier(attackerFaction: string, defenderFaction: string): number {
   return FACTION_ADVANTAGE[attackerFaction]?.[defenderFaction] ?? 1.0
 }
 
+// ------------------------------------------------------------------
+// Role modifiers — per doc §1
+// ------------------------------------------------------------------
+const ROLE_MODIFIERS: Record<string, { hp: number; atk: number; def: number; spd: number; acc: number; res: number }> = {
+  offensive: { hp: 1.0, atk: 1.15, def: 0.9, spd: 1.08, acc: 1.0, res: 1.0 },
+  defensive: { hp: 1.25, atk: 0.9, def: 1.2, spd: 1.0, acc: 1.0, res: 1.0 },
+  support:   { hp: 1.15, atk: 1.0, def: 1.0, spd: 1.0, acc: 1.12, res: 1.18 },
+}
+
+export function applyRoleModifiers(
+  role: string,
+  stats: { hp: number; atk: number; def: number; spd: number; acc: number; res: number }
+) {
+  const mod = ROLE_MODIFIERS[role] || ROLE_MODIFIERS.offensive
+  return {
+    hp: Math.round(stats.hp * mod.hp),
+    atk: Math.round(stats.atk * mod.atk),
+    def: Math.round(stats.def * mod.def),
+    spd: Math.round(stats.spd * mod.spd),
+    acc: Math.round(stats.acc * mod.acc),
+    res: Math.round(stats.res * mod.res),
+  }
+}
+
+// ------------------------------------------------------------------
+// Per-rarity crit stats — per doc §1
+// ------------------------------------------------------------------
+const RARITY_CRIT: Record<string, { rate: number; dmg: number }> = {
+  common:    { rate: 15, dmg: 150 },
+  rare:      { rate: 18, dmg: 160 },
+  epic:      { rate: 22, dmg: 172 },
+  legendary: { rate: 26, dmg: 185 },
+}
+
+export function getCritForRarity(rarity: string): { rate: number; dmg: number } {
+  return RARITY_CRIT[rarity] || RARITY_CRIT.common
+}
+
+// ------------------------------------------------------------------
+// Stat helpers
+// ------------------------------------------------------------------
 function getBuffedStat(unit: BattleUnit, stat: 'atk' | 'def' | 'spd'): number {
   let base = unit[stat]
   for (const effect of unit.statusEffects) {
@@ -100,7 +146,14 @@ function isStunned(unit: BattleUnit): boolean {
   return unit.statusEffects.some(e => e.type === 'stun')
 }
 
-/** Calculate damage: (ATK * multiplier - DEF * 0.4) * faction * variance * crit */
+// ------------------------------------------------------------------
+// Damage formula — per doc §3 (copy-paste ready from spec)
+// baseDamage = ATK * skillMultiplier
+// defReduction = DEF / (DEF + 600)   — soft cap
+// affinityMod = 1.3 / 0.7 / 1.0
+// variance = 0.92 … 1.08
+// finalDamage = floor(baseDamage * critMult * (1 - defReduction) * affinityMod * variance)
+// ------------------------------------------------------------------
 function calculateDamage(
   attacker: BattleUnit,
   defender: BattleUnit,
@@ -108,13 +161,16 @@ function calculateDamage(
 ): { damage: number; isCrit: boolean } {
   const atk = getBuffedStat(attacker, 'atk')
   const def = getBuffedStat(defender, 'def')
-  const raw = Math.max(1, atk * multiplier - def * 0.4)
-  const variance = 0.9 + Math.random() * 0.2
-  const faction = getFactionBonus(attacker.faction, defender.faction)
+
+  const baseDamage = atk * multiplier
   const isCrit = Math.random() * 100 < attacker.critRate
-  const critMult = isCrit ? attacker.critDmg : 1
-  const damage = Math.round(raw * variance * faction * critMult)
-  return { damage, isCrit }
+  const critMult = isCrit ? (attacker.critDmg / 100) : 1.0
+  const defReduction = def / (def + 600) // soft cap per doc
+  const affinityMod = getAffinityMultiplier(attacker.faction, defender.faction)
+  const variance = 0.92 + Math.random() * 0.16
+
+  const finalDamage = Math.max(1, Math.floor(baseDamage * critMult * (1 - defReduction) * affinityMod * variance))
+  return { damage: finalDamage, isCrit }
 }
 
 function applyDamage(unit: BattleUnit, damage: number): number {
@@ -188,11 +244,44 @@ function processStatusTicks(unit: BattleUnit, log: BattleAction[]): void {
   }
 }
 
-/** Get all living units sorted by speed (turn order) */
+/**
+ * Turn Meter system — per doc §2
+ * SPD / 100 fill per tick. When a unit reaches 100 → they act, meter resets to 0.
+ * We simulate ticks to find the next acting order for the round.
+ */
 function computeTurnOrder(state: BattleState): string[] {
   const all = [...state.playerTeam, ...state.enemyTeam].filter(u => u.isAlive)
-  all.sort((a, b) => getBuffedStat(b, 'spd') - getBuffedStat(a, 'spd'))
-  return all.map(u => u.id)
+  // Simulate turn meter fills to produce a round order
+  // Clone meters so we don't mutate real state during ordering
+  const meters = new Map<string, number>()
+  for (const u of all) meters.set(u.id, u.turnMeter)
+
+  const order: string[] = []
+  const maxTicks = all.length * 3 // safety cap
+
+  for (let i = 0; i < maxTicks && order.length < all.length; i++) {
+    // Tick all meters
+    for (const u of all) {
+      if (order.includes(u.id)) continue
+      const spd = getBuffedStat(u, 'spd')
+      meters.set(u.id, (meters.get(u.id) || 0) + spd / 100)
+    }
+    // Check who reached 100
+    const ready = all
+      .filter(u => !order.includes(u.id) && (meters.get(u.id) || 0) >= 100)
+      .sort((a, b) => (meters.get(b.id) || 0) - (meters.get(a.id) || 0)) // highest meter first
+    for (const u of ready) {
+      order.push(u.id)
+      meters.set(u.id, 0) // reset on action — per doc §2
+    }
+  }
+
+  // Fallback: add any remaining units sorted by SPD
+  for (const u of all.sort((a, b) => getBuffedStat(b, 'spd') - getBuffedStat(a, 'spd'))) {
+    if (!order.includes(u.id)) order.push(u.id)
+  }
+
+  return order
 }
 
 function getUnit(state: BattleState, id: string): BattleUnit | undefined {
@@ -415,8 +504,12 @@ export function checkBattleEnd(state: BattleState): 'victory' | 'defeat' | null 
   return null
 }
 
-/** Create initial battle state */
+/** Create initial battle state — meters start at 0, first order computed via tick sim */
 export function initBattle(playerTeam: BattleUnit[], enemyTeam: BattleUnit[]): BattleState {
+  // Ensure all units start with turnMeter = 0
+  for (const u of [...playerTeam, ...enemyTeam]) {
+    u.turnMeter = 0
+  }
   const state: BattleState = {
     turn: 1,
     turnOrder: [],
@@ -444,6 +537,9 @@ export function advanceTurn(state: BattleState, skillIndex: number, targetId: st
 
   // Tick cooldowns
   tickCooldowns(unit)
+
+  // Reset turn meter to 0 after acting — per doc §2
+  unit.turnMeter = 0
 
   // Advance index
   state.currentUnitIndex += 1
@@ -478,7 +574,7 @@ export function autoAction(state: BattleState): { skillIndex: number; targetId: 
   return aiChooseAction(unit, state)
 }
 
-/** Convert a Hero from the store into a BattleUnit */
+/** Convert a Hero from the store into a BattleUnit — applies role modifiers & rarity crit per doc */
 export function heroToBattleUnit(hero: {
   id: string; name: string; faction: string; role: string; rarity: string;
   hp?: number; atk?: number; def?: number; spd?: number;
@@ -508,13 +604,6 @@ export function heroToBattleUnit(hero: {
     'Soul Weave': 'heal', 'Resonance': 'aoe_heal',
   }
 
-  const statusByType: Record<string, { type: StatusType; chance: number; duration: number; value: number } | undefined> = {
-    'damage': { type: 'burn', chance: 0.2, duration: 2, value: Math.round((hero.atk || 1000) * 0.1) },
-    'aoe_damage': undefined,
-    'debuff': { type: 'atk_down', chance: 0.5, duration: 2, value: 20 },
-    'buff': { type: 'def_up', chance: 1.0, duration: 2, value: 25 },
-  }
-
   const skills: BattleSkill[] = hero.skills.map(s => {
     const type = skillTypeMap[s.name] || (hero.role === 'support' ? 'heal' : hero.role === 'defensive' ? 'buff' : 'damage')
     const level = s.level || 1
@@ -538,11 +627,28 @@ export function heroToBattleUnit(hero: {
       type,
       multiplier: mult,
       statusEffect: type === 'buff' ? { type: 'def_up' as StatusType, chance: 1, duration: 2, value: 25 + level * 3 } :
-        type === 'damage' && Math.random() < 0.3 ? statusByType['damage'] : undefined,
+        type === 'damage' && Math.random() < 0.3
+          ? { type: 'burn' as StatusType, chance: 0.2, duration: 2, value: Math.round((hero.atk || 1000) * 0.1) }
+          : undefined,
       targetType,
       description: `${type} skill (Lv.${level})`,
     }
   })
+
+  // Apply role modifiers per doc §1
+  const baseAcc = 85 + (hero.rarity === 'rare' ? 10 : hero.rarity === 'epic' ? 20 : hero.rarity === 'legendary' ? 30 : 0)
+  const baseRes = baseAcc
+  const modded = applyRoleModifiers(hero.role, {
+    hp: hero.hp || 5000,
+    atk: hero.atk || 1000,
+    def: hero.def || 800,
+    spd: hero.spd || 100,
+    acc: baseAcc,
+    res: baseRes,
+  })
+
+  // Per-rarity crit per doc §1
+  const crit = getCritForRarity(hero.rarity)
 
   return {
     id: hero.id,
@@ -550,13 +656,16 @@ export function heroToBattleUnit(hero: {
     faction: hero.faction,
     role: hero.role,
     isEnemy: false,
-    maxHp: hero.hp || 5000,
-    currentHp: hero.hp || 5000,
-    atk: hero.atk || 1000,
-    def: hero.def || 800,
-    spd: hero.spd || 100,
-    critRate: 15,
-    critDmg: 1.5,
+    maxHp: modded.hp,
+    currentHp: modded.hp,
+    atk: modded.atk,
+    def: modded.def,
+    spd: modded.spd,
+    critRate: crit.rate,
+    critDmg: crit.dmg, // stored as percentage (e.g. 150 = 1.5×)
+    acc: modded.acc,
+    res: modded.res,
+    turnMeter: 0,
     skills,
     statusEffects: [],
     isAlive: true,
