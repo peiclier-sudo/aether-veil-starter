@@ -89,14 +89,11 @@ function FeaturedHero({ hero, onViewRoster }: { hero: any; onViewRoster: () => v
           </div>
 
           <div className="flex gap-3">
-            <button className="px-5 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold text-sm rounded-lg hover:brightness-110 transition">
-              Level Up
-            </button>
             <button
               onClick={onViewRoster}
-              className="px-5 py-2.5 border border-white/20 text-white/80 text-sm rounded-lg hover:bg-white/5 transition"
+              className="px-5 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-bold text-sm rounded-lg hover:brightness-110 transition"
             >
-              View Roster
+              View Details
             </button>
           </div>
         </div>
@@ -110,7 +107,15 @@ function QuickActions({ onNavigate }: { onNavigate: (page: string) => void }) {
     { label: 'Campaign', icon: '⚔️', desc: 'Story battles', page: 'campaign' },
     { label: 'Arena', icon: '🏟️', desc: 'PvP combat', page: 'arena' },
     { label: 'Summon', icon: '🌟', desc: 'Summon heroes', page: 'summon' },
-    { label: 'Dungeons', icon: '🏰', desc: 'Loot & gear', page: 'dungeons' },
+    { label: 'Dungeons', icon: '🌀', desc: 'Loot & gear', page: 'dungeons' },
+    { label: 'Shop', icon: '🛒', desc: 'Buy items', page: 'shop' },
+    { label: 'Ascend', icon: '⭐', desc: 'Power up', page: 'ascension' },
+    { label: 'Guild', icon: '🏰', desc: 'Boss raids', page: 'guild' },
+    { label: 'Trophies', icon: '🏆', desc: 'Achievements', page: 'achievements' },
+    { label: 'Champions', icon: '👥', desc: 'View roster', page: 'roster' },
+    { label: 'Team', icon: '🛡️', desc: 'Build team', page: 'team' },
+    { label: 'Inventory', icon: '📦', desc: 'Manage gear', page: 'inventory' },
+    { label: 'Bonds', icon: '🔗', desc: 'Faction synergy', page: 'resonance' },
   ]
   return (
     <div className="grid grid-cols-4 gap-3">

@@ -1,91 +1,7 @@
 import { useGameStore, Hero } from '@/lib/store'
-import { generateHeroPortrait } from '@/lib/hero-portraits'
 import HeroCard from './HeroCard'
-import { useMemo, useState } from 'react'
-
-const rarityBadgeColor: Record<string, string> = {
-  common:    'bg-zinc-600 text-zinc-200',
-  rare:      'bg-blue-600 text-blue-100',
-  epic:      'bg-purple-600 text-purple-100',
-  legendary: 'bg-yellow-500 text-black font-bold',
-}
-
-function HeroDetailModal({ hero, onClose }: { hero: Hero; onClose: () => void }) {
-  const portrait = useMemo(
-    () => generateHeroPortrait(hero.name, hero.faction, hero.rarity, hero.role),
-    [hero.name, hero.faction, hero.rarity, hero.role]
-  )
-
-  return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div
-        className="bg-gradient-to-b from-[#1a1028] to-[#0a060f] border border-white/15 max-w-md w-full rounded-2xl overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Portrait header */}
-        <div className="relative h-52 overflow-hidden">
-          <img src={portrait} alt={hero.name} className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#1a1028] via-transparent to-transparent" />
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white border border-white/10 transition"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="px-6 pb-6 -mt-6 relative z-10">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`text-[10px] px-2 py-0.5 rounded uppercase tracking-wider ${rarityBadgeColor[hero.rarity]}`}>
-              {hero.rarity}
-            </span>
-            <span className="text-[10px] text-white/40 uppercase tracking-wider">{hero.role}</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white">{hero.name}</h2>
-          <p className="text-sm text-purple-300/70 mb-5">{hero.faction}</p>
-
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-2 mb-5">
-            {[
-              { label: 'HP', value: hero.hp, color: 'text-emerald-400' },
-              { label: 'ATK', value: hero.atk, color: 'text-red-400' },
-              { label: 'DEF', value: hero.def, color: 'text-sky-400' },
-              { label: 'SPD', value: hero.spd, color: 'text-purple-400' },
-            ].map(s => (
-              <div key={s.label} className="bg-white/5 rounded-lg py-2 text-center border border-white/5">
-                <p className="text-[10px] text-white/40 uppercase">{s.label}</p>
-                <p className={`text-base font-mono font-bold ${s.color}`}>{s.value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Skills */}
-          <div className="space-y-2 mb-5">
-            <p className="text-[10px] text-white/40 uppercase tracking-wider">Skills</p>
-            {hero.skills.map(skill => (
-              <div key={skill.name} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 border border-white/5">
-                <span className="text-xs text-white">{skill.name}</span>
-                <span className="text-[10px] text-white/40">CD: {skill.cooldown}s</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Power + level */}
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-[10px] text-white/40">LEVEL</span>
-              <span className="ml-2 text-lg font-mono font-bold text-white">{hero.level}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-yellow-400">⚡</span>
-              <span className="text-xl font-mono font-bold text-yellow-300">{hero.power}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+import HeroDetail from './HeroDetail'
+import { useState } from 'react'
 
 export default function RosterPage({ onBack }: { onBack: () => void }) {
   const { heroes } = useGameStore()
@@ -192,7 +108,7 @@ export default function RosterPage({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Detail modal */}
-      {selectedHero && <HeroDetailModal hero={selectedHero} onClose={() => setSelectedHero(null)} />}
+      {selectedHero && <HeroDetail hero={selectedHero} onClose={() => setSelectedHero(null)} />}
     </div>
   )
 }
