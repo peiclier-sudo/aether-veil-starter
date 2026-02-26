@@ -24,112 +24,138 @@ const rarityColor: Record<string, string> = {
   legendary: '#eab308',
 }
 
-/* ────── 3D model placeholder — shown from back (player) or front (enemy) ────── */
-function ModelSlot({
+/* ─────────── Isometric diamond tile ─────────── */
+function IsoTile({ color, size = 48 }: { color: string; size?: number }) {
+  const half = size / 2
+  return (
+    <svg width={size} height={size * 0.6} viewBox={`0 0 ${size} ${size * 0.6}`} className="absolute bottom-0 left-1/2 -translate-x-1/2">
+      <polygon
+        points={`${half},0 ${size},${half * 0.6} ${half},${size * 0.6} 0,${half * 0.6}`}
+        fill={color}
+        opacity="0.3"
+        stroke={color}
+        strokeWidth="1"
+        strokeOpacity="0.5"
+      />
+    </svg>
+  )
+}
+
+/* ─────────── 3D model placeholder on isometric field ─────────── */
+function IsoBattleUnit({
   unit,
   facing,
   isActive,
   floatingText,
-  shakeClass,
+  isShaking,
 }: {
   unit: BattleUnit
-  facing: 'back' | 'front'
+  facing: 'upper-right' | 'lower-left'
   isActive: boolean
   floatingText: string | null
-  shakeClass: string
+  isShaking: boolean
 }) {
-  const glow = isActive ? '0 0 24px rgba(250,204,21,0.5)' : 'none'
-  const border = isActive
-    ? '2px solid rgba(250,204,21,0.8)'
-    : `2px solid ${rarityColor[unit.rarity] || '#555'}44`
-  const deadOverlay = !unit.isAlive
+  const borderCol = isActive
+    ? 'rgba(250,204,21,0.8)'
+    : `${rarityColor[unit.rarity] || '#555'}66`
+  const glowShadow = isActive ? '0 0 20px rgba(250,204,21,0.4), 0 4px 16px rgba(0,0,0,0.5)' : '0 4px 12px rgba(0,0,0,0.5)'
+  const tileColor = unit.isEnemy ? '#ef4444' : '#06b6d4'
 
   return (
     <div
-      className={`relative flex flex-col items-center transition-all duration-300 ${shakeClass} ${
-        isActive ? 'scale-110 z-20' : 'z-10'
-      } ${deadOverlay ? 'opacity-30' : ''}`}
-      style={{ filter: isActive ? 'brightness(1.15)' : 'brightness(1)' }}
+      className={`relative flex flex-col items-center ${isShaking ? 'animate-shake' : ''} ${
+        !unit.isAlive ? 'opacity-25' : ''
+      }`}
+      style={{
+        transition: 'transform 0.3s, filter 0.3s',
+        transform: isActive ? 'scale(1.1) translateY(-4px)' : 'scale(1)',
+        filter: isActive ? 'brightness(1.15)' : 'brightness(1)',
+        zIndex: isActive ? 20 : 10,
+      }}
     >
-      {/* Floating text */}
+      {/* Floating damage / heal text */}
       {floatingText && (
-        <div className={`absolute -top-8 left-1/2 -translate-x-1/2 text-base font-black z-30 whitespace-nowrap drop-shadow-lg animate-bounce ${
+        <div className={`absolute -top-8 left-1/2 -translate-x-1/2 text-sm font-black z-30 whitespace-nowrap drop-shadow-lg animate-bounce ${
           floatingText.startsWith('+') ? 'text-green-400' : floatingText.includes('CRIT') ? 'text-yellow-300' : 'text-red-400'
         }`}>
           {floatingText}
         </div>
       )}
 
-      {/* 3D Model container */}
+      {/* 3D model placeholder */}
       <div
-        className="relative rounded-xl overflow-hidden"
+        className="relative overflow-hidden rounded-lg"
         style={{
-          width: 72,
-          height: 96,
-          border,
-          boxShadow: glow,
-          background: `linear-gradient(${facing === 'front' ? '180deg' : '0deg'}, rgba(255,255,255,0.08), rgba(0,0,0,0.3))`,
+          width: 56,
+          height: 72,
+          border: `2px solid ${borderCol}`,
+          boxShadow: glowShadow,
+          background: `linear-gradient(${facing === 'lower-left' ? '200deg' : '20deg'}, rgba(255,255,255,0.06), rgba(0,0,0,0.4))`,
         }}
       >
-        {/* Placeholder silhouette — back view for player, front for enemy */}
+        {/* Silhouette — facing direction */}
         <div className="absolute inset-0 flex items-center justify-center">
-          {facing === 'back' ? (
-            /* Player hero seen from behind — silhouette with back turned */
-            <svg viewBox="0 0 64 80" className="w-12 h-16 opacity-30" fill="currentColor">
-              <ellipse cx="32" cy="16" rx="10" ry="12" className="text-white" />
-              <rect x="20" y="26" width="24" height="32" rx="4" className="text-white" />
-              <rect x="14" y="30" width="8" height="20" rx="3" className="text-white" />
-              <rect x="42" y="30" width="8" height="20" rx="3" className="text-white" />
-              <rect x="22" y="56" width="8" height="18" rx="3" className="text-white" />
-              <rect x="34" y="56" width="8" height="18" rx="3" className="text-white" />
+          {facing === 'upper-right' ? (
+            /* Player hero — back turned, facing upper-right */
+            <svg viewBox="0 0 48 64" className="w-9 h-12 opacity-25" style={{ transform: 'scaleX(-1)' }}>
+              <ellipse cx="24" cy="12" rx="8" ry="10" fill="#67e8f9" />
+              <rect x="15" y="20" width="18" height="24" rx="3" fill="#67e8f9" />
+              <rect x="10" y="23" width="6" height="16" rx="2" fill="#67e8f9" />
+              <rect x="32" y="23" width="6" height="16" rx="2" fill="#67e8f9" />
+              <rect x="17" y="42" width="6" height="14" rx="2" fill="#67e8f9" />
+              <rect x="25" y="42" width="6" height="14" rx="2" fill="#67e8f9" />
             </svg>
           ) : (
-            /* Enemy facing camera */
-            <svg viewBox="0 0 64 80" className="w-12 h-16 opacity-30" fill="currentColor">
-              <ellipse cx="32" cy="16" rx="10" ry="12" className="text-red-400" />
-              <circle cx="27" cy="14" r="2" className="text-red-200" />
-              <circle cx="37" cy="14" r="2" className="text-red-200" />
-              <rect x="20" y="26" width="24" height="32" rx="4" className="text-red-400" />
-              <rect x="14" y="30" width="8" height="20" rx="3" className="text-red-400" />
-              <rect x="42" y="30" width="8" height="20" rx="3" className="text-red-400" />
-              <rect x="22" y="56" width="8" height="18" rx="3" className="text-red-400" />
-              <rect x="34" y="56" width="8" height="18" rx="3" className="text-red-400" />
+            /* Enemy — facing lower-left toward camera/player */
+            <svg viewBox="0 0 48 64" className="w-9 h-12 opacity-25">
+              <ellipse cx="24" cy="12" rx="8" ry="10" fill="#f87171" />
+              <circle cx="20" cy="10" r="1.5" fill="#fca5a5" />
+              <circle cx="28" cy="10" r="1.5" fill="#fca5a5" />
+              <rect x="15" y="20" width="18" height="24" rx="3" fill="#f87171" />
+              <rect x="10" y="23" width="6" height="16" rx="2" fill="#f87171" />
+              <rect x="32" y="23" width="6" height="16" rx="2" fill="#f87171" />
+              <rect x="17" y="42" width="6" height="14" rx="2" fill="#f87171" />
+              <rect x="25" y="42" width="6" height="14" rx="2" fill="#f87171" />
             </svg>
           )}
         </div>
 
-        {/* Role icon overlay */}
-        <div className="absolute top-1 right-1 text-sm opacity-60">
+        {/* Role badge */}
+        <div className="absolute top-0.5 right-0.5 text-[10px] opacity-60">
           {unit.role === 'offensive' ? '⚔️' : unit.role === 'defensive' ? '🛡️' : '✨'}
         </div>
 
-        {/* Model ID watermark — placeholder for actual 3D model */}
-        <div className="absolute bottom-1 left-1 right-1 text-[6px] text-white/15 truncate text-center leading-tight">
+        {/* Model ID watermark */}
+        <div className="absolute bottom-0.5 left-0.5 right-0.5 text-[5px] text-white/10 truncate text-center">
           {unit.modelId}
         </div>
 
         {/* Death overlay */}
-        {deadOverlay && (
+        {!unit.isAlive && (
           <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
-            <span className="text-2xl">💀</span>
+            <span className="text-lg">💀</span>
           </div>
         )}
 
-        {/* Active turn glow ring */}
+        {/* Active glow pulse */}
         {isActive && unit.isAlive && (
-          <div className="absolute -inset-1 rounded-xl border-2 border-yellow-400/60 animate-pulse pointer-events-none" />
+          <div className="absolute -inset-0.5 rounded-lg border-2 border-yellow-400/50 animate-pulse pointer-events-none" />
         )}
       </div>
 
-      {/* Name + HP below model */}
-      <div className="mt-1 w-20 text-center">
-        <p className="text-[9px] font-bold text-white truncate">{unit.name}</p>
+      {/* Isometric floor tile under the unit */}
+      <div className="relative w-14 h-5 -mt-1">
+        <IsoTile color={tileColor} size={56} />
+      </div>
+
+      {/* Name + HP */}
+      <div className="w-16 text-center -mt-0.5">
+        <p className="text-[8px] font-bold text-white truncate">{unit.name}</p>
         <HpBarCompact current={unit.currentHp} max={unit.maxHp} />
-        {/* Status effects */}
         {unit.statusEffects.length > 0 && (
-          <div className="flex flex-wrap gap-px mt-0.5 justify-center">
+          <div className="flex flex-wrap gap-px mt-px justify-center">
             {unit.statusEffects.map((e, i) => (
-              <span key={`${e.type}-${i}`} className="text-[8px]" title={`${e.type} (${e.duration}t)`}>
+              <span key={`${e.type}-${i}`} className="text-[7px]" title={`${e.type} (${e.duration}t)`}>
                 {statusIcons[e.type]}
               </span>
             ))}
@@ -145,12 +171,63 @@ function HpBarCompact({ current, max }: { current: number; max: number }) {
   const color = pct > 60 ? 'bg-green-500' : pct > 30 ? 'bg-yellow-500' : 'bg-red-500'
 
   return (
-    <div className="w-full h-1.5 rounded-full bg-black/60 overflow-hidden mt-0.5">
+    <div className="w-full h-1 rounded-full bg-black/60 overflow-hidden mt-px">
       <div
         className={`h-full rounded-full ${color} transition-all duration-500`}
         style={{ width: `${pct}%` }}
       />
     </div>
+  )
+}
+
+/* ─────────── Isometric diamond platform ─────────── */
+function IsoPlatform({ units, side }: { units: number; side: 'player' | 'enemy' }) {
+  // Build a diamond grid of tiles for the platform
+  const tileSize = 40
+  const cols = Math.min(units, 3)
+  const rows = Math.ceil(units / cols)
+  const baseColor = side === 'player' ? 'rgba(6,182,212,' : 'rgba(239,68,68,'
+
+  // Generate diamond tile positions
+  const tiles: { x: number; y: number }[] = []
+  for (let r = 0; r < rows + 1; r++) {
+    for (let c = 0; c < cols + 1; c++) {
+      tiles.push({
+        x: (c - r) * (tileSize * 0.5),
+        y: (c + r) * (tileSize * 0.3),
+      })
+    }
+  }
+
+  const minX = Math.min(...tiles.map(t => t.x))
+  const maxX = Math.max(...tiles.map(t => t.x))
+  const minY = Math.min(...tiles.map(t => t.y))
+  const maxY = Math.max(...tiles.map(t => t.y))
+  const w = maxX - minX + tileSize
+  const h = maxY - minY + tileSize * 0.6
+
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`${minX} ${minY} ${w} ${h}`}
+      className="absolute inset-0 pointer-events-none"
+      style={{ opacity: 0.35 }}
+    >
+      {tiles.map((t, i) => {
+        const half = tileSize / 2
+        const th = tileSize * 0.3
+        return (
+          <polygon
+            key={i}
+            points={`${t.x + half},${t.y} ${t.x + tileSize},${t.y + th} ${t.x + half},${t.y + th * 2} ${t.x},${t.y + th}`}
+            fill={`${baseColor}0.15)`}
+            stroke={`${baseColor}0.4)`}
+            strokeWidth="0.5"
+          />
+        )
+      })}
+    </svg>
   )
 }
 
@@ -161,7 +238,7 @@ function TurnOrderBar({ turnOrder, allUnits, currentIndex }: {
 }) {
   return (
     <div className="flex items-center gap-1 overflow-x-auto px-2 py-1 bg-black/50 rounded-lg backdrop-blur-sm">
-      <span className="text-[8px] text-white/30 mr-1 shrink-0 uppercase tracking-widest">Turn</span>
+      <span className="text-[7px] text-white/30 mr-1 shrink-0 uppercase tracking-widest">Turn</span>
       {turnOrder.map((id, idx) => {
         const unit = allUnits.find(u => u.id === id)
         if (!unit || !unit.isAlive) return null
@@ -169,7 +246,7 @@ function TurnOrderBar({ turnOrder, allUnits, currentIndex }: {
         return (
           <div
             key={`${id}-${idx}`}
-            className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold border transition-all ${
+            className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[7px] font-bold border transition-all ${
               isCurrent
                 ? 'border-yellow-400 bg-yellow-400/20 text-yellow-300 scale-125'
                 : unit.isEnemy
@@ -195,12 +272,12 @@ function BattleLog({ log }: { log: BattleAction[] }) {
     }
   }, [log.length])
 
-  const lastEntries = log.slice(-8)
+  const lastEntries = log.slice(-6)
 
   return (
-    <div ref={logRef} className="h-16 overflow-y-auto px-2 py-1 bg-black/40 rounded-lg backdrop-blur-sm space-y-px">
+    <div ref={logRef} className="h-14 overflow-y-auto px-2 py-1 bg-black/40 rounded-lg backdrop-blur-sm space-y-px">
       {lastEntries.map((entry, i) => (
-        <p key={i} className={`text-[9px] leading-tight ${
+        <p key={i} className={`text-[8px] leading-tight ${
           entry.type === 'death' ? 'text-red-400 font-bold' :
           entry.isCrit ? 'text-yellow-300' :
           entry.healing ? 'text-green-400' :
@@ -212,44 +289,15 @@ function BattleLog({ log }: { log: BattleAction[] }) {
         </p>
       ))}
       {lastEntries.length === 0 && (
-        <p className="text-[9px] text-white/20 text-center mt-3">Battle begins...</p>
+        <p className="text-[8px] text-white/20 text-center mt-2">Battle begins...</p>
       )}
     </div>
   )
 }
 
-/* ────── Ground plane for the 3D arena ────── */
-function ArenaGround() {
-  return (
-    <div
-      className="absolute inset-0 pointer-events-none"
-      style={{
-        background: `
-          radial-gradient(ellipse 120% 60% at 50% 85%, rgba(30,15,60,0.9) 0%, transparent 70%),
-          radial-gradient(ellipse 80% 30% at 50% 90%, rgba(100,60,200,0.15) 0%, transparent 60%)
-        `,
-      }}
-    >
-      {/* Ground grid lines — perspective effect */}
-      <div className="absolute bottom-0 left-0 right-0 h-2/3 overflow-hidden opacity-20">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute left-0 right-0 border-t border-white/10"
-            style={{
-              bottom: `${i * 12}%`,
-              transform: `scaleX(${1 + i * 0.15})`,
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ══════════════════════════════════════════════════════════════ */
-/*  MAIN BATTLE PAGE                                            */
-/* ══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════ */
+/*  MAIN BATTLE PAGE                                          */
+/* ═══════════════════════════════════════════════════════════ */
 
 export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: BattlePageProps) {
   const [battleState, setBattleState] = useState<BattleState>(() =>
@@ -269,7 +317,6 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
 
   const showFloatingText = useCallback((unitId: string, text: string) => {
     setFloatingTexts(prev => ({ ...prev, [unitId]: text }))
-    // Shake on damage
     if (text.startsWith('-') || text.includes('CRIT')) {
       setShakeUnits(prev => ({ ...prev, [unitId]: true }))
       setTimeout(() => setShakeUnits(prev => { const n = { ...prev }; delete n[unitId]; return n }), 400)
@@ -297,7 +344,13 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
     if (battleState.phase !== 'active' || isProcessing) return
 
     setIsProcessing(true)
-    const newState = { ...battleState, playerTeam: [...battleState.playerTeam], enemyTeam: [...battleState.enemyTeam], log: [...battleState.log], turnOrder: [...battleState.turnOrder] }
+    const newState = {
+      ...battleState,
+      playerTeam: [...battleState.playerTeam],
+      enemyTeam: [...battleState.enemyTeam],
+      log: [...battleState.log],
+      turnOrder: [...battleState.turnOrder],
+    }
     const actions = advanceTurn(newState, skillIndex, targetId)
     processActions(actions)
     setBattleState(newState)
@@ -318,7 +371,6 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
     executeAction(skillIndex, targetId)
   }, [battleState, executeAction])
 
-  // Auto-play enemy turns
   useEffect(() => {
     if (phase !== 'battle' || battleState.phase !== 'active') return
     const unit = getCurrentUnit(battleState)
@@ -330,7 +382,6 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
     }
   }, [battleState, phase, isProcessing, executeEnemyTurn, speed])
 
-  // Auto-mode for player turns
   useEffect(() => {
     if (!autoMode || phase !== 'battle' || battleState.phase !== 'active' || isProcessing) return
     const unit = getCurrentUnit(battleState)
@@ -346,7 +397,6 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
     }
   }, [autoMode, battleState, phase, isProcessing, executeAction, speed])
 
-  // Skill selection for player
   const handleSkillUse = (skillIndex: number) => {
     if (!isPlayerTurn || autoMode || isProcessing) return
     const unit = currentUnit!
@@ -371,7 +421,7 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
     executeAction(skillIndex, targetId)
   }
 
-  /* ═══════ INTRO SCREEN ═══════ */
+  /* ═══════════════ INTRO SCREEN ═══════════════ */
   if (phase === 'intro') {
     const playerPower = playerTeam.reduce((s, u) => s + u.atk * 2 + u.maxHp * 0.5 + u.def, 0)
     const enemyPower = enemyTeam.reduce((s, u) => s + u.atk * 2 + u.maxHp * 0.5 + u.def, 0)
@@ -382,18 +432,17 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
           <h2 className="text-2xl font-black text-white tracking-wide uppercase">{title}</h2>
 
           <div className="flex items-stretch justify-center gap-6">
-            {/* Player side — from behind */}
             <div className="flex-1 text-center">
               <p className="text-[10px] text-cyan-400/60 uppercase tracking-widest mb-3 font-bold">Your Champions</p>
               <div className="flex gap-2 justify-center mb-3">
                 {playerTeam.map(u => (
                   <div key={u.id} className="flex flex-col items-center">
                     <div className="w-14 h-18 rounded-lg bg-cyan-500/5 border border-cyan-500/20 flex items-center justify-center relative overflow-hidden">
-                      <svg viewBox="0 0 64 80" className="w-10 h-13 opacity-25" fill="currentColor">
-                        <ellipse cx="32" cy="16" rx="10" ry="12" className="text-cyan-300" />
-                        <rect x="20" y="26" width="24" height="32" rx="4" className="text-cyan-300" />
-                        <rect x="22" y="56" width="8" height="18" rx="3" className="text-cyan-300" />
-                        <rect x="34" y="56" width="8" height="18" rx="3" className="text-cyan-300" />
+                      <svg viewBox="0 0 48 64" className="w-9 h-12 opacity-25">
+                        <ellipse cx="24" cy="12" rx="8" ry="10" fill="#67e8f9" />
+                        <rect x="15" y="20" width="18" height="24" rx="3" fill="#67e8f9" />
+                        <rect x="17" y="42" width="6" height="14" rx="2" fill="#67e8f9" />
+                        <rect x="25" y="42" width="6" height="14" rx="2" fill="#67e8f9" />
                       </svg>
                       <span className="absolute top-0.5 right-0.5 text-xs">{u.role === 'offensive' ? '⚔️' : u.role === 'defensive' ? '🛡️' : '✨'}</span>
                     </div>
@@ -409,20 +458,19 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
               <span className="text-3xl font-black text-white/20">VS</span>
             </div>
 
-            {/* Enemy side — facing front */}
             <div className="flex-1 text-center">
               <p className="text-[10px] text-red-400/60 uppercase tracking-widest mb-3 font-bold">Enemies</p>
               <div className="flex gap-2 justify-center mb-3">
                 {enemyTeam.map(u => (
                   <div key={u.id} className="flex flex-col items-center">
                     <div className="w-14 h-18 rounded-lg bg-red-500/5 border border-red-500/20 flex items-center justify-center relative overflow-hidden">
-                      <svg viewBox="0 0 64 80" className="w-10 h-13 opacity-25" fill="currentColor">
-                        <ellipse cx="32" cy="16" rx="10" ry="12" className="text-red-400" />
-                        <circle cx="27" cy="14" r="2" className="text-red-200" />
-                        <circle cx="37" cy="14" r="2" className="text-red-200" />
-                        <rect x="20" y="26" width="24" height="32" rx="4" className="text-red-400" />
-                        <rect x="22" y="56" width="8" height="18" rx="3" className="text-red-400" />
-                        <rect x="34" y="56" width="8" height="18" rx="3" className="text-red-400" />
+                      <svg viewBox="0 0 48 64" className="w-9 h-12 opacity-25">
+                        <ellipse cx="24" cy="12" rx="8" ry="10" fill="#f87171" />
+                        <circle cx="20" cy="10" r="1.5" fill="#fca5a5" />
+                        <circle cx="28" cy="10" r="1.5" fill="#fca5a5" />
+                        <rect x="15" y="20" width="18" height="24" rx="3" fill="#f87171" />
+                        <rect x="17" y="42" width="6" height="14" rx="2" fill="#f87171" />
+                        <rect x="25" y="42" width="6" height="14" rx="2" fill="#f87171" />
                       </svg>
                       <span className="absolute top-0.5 right-0.5 text-xs">{u.role === 'offensive' ? '⚔️' : u.role === 'defensive' ? '🛡️' : '✨'}</span>
                     </div>
@@ -446,7 +494,7 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
     )
   }
 
-  /* ═══════ RESULT SCREEN ═══════ */
+  /* ═══════════════ RESULT SCREEN ═══════════════ */
   if (phase === 'result') {
     const won = battleState.phase === 'victory'
 
@@ -490,30 +538,73 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
     )
   }
 
-  /* ═══════════════════════════════════════════════════════════ */
-  /*  3D PERSPECTIVE BATTLE SCREEN  (RSL-style)                 */
-  /* ═══════════════════════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════════════ */
+  /*  ISOMETRIC BATTLE SCENE  —  RSL diagonal layout                */
+  /*                                                                */
+  /*  Player team (bottom-left)  ←——→  Enemy team (upper-right)    */
+  /*  Heroes face upper-right        Enemies face lower-left        */
+  /*  Each group on a diamond platform                              */
+  /* ═══════════════════════════════════════════════════════════════ */
 
-  // Compute spacing for units on the 3D "stage"
-  const enemySpacing = Math.min(96, 400 / Math.max(battleState.enemyTeam.length, 1))
-  const playerSpacing = Math.min(96, 400 / Math.max(battleState.playerTeam.length, 1))
+  // Position units in a staggered formation on their diamond platform
+  // Player: 2×2 or 1×N diagonal layout, bottom-left
+  // Enemy: same, upper-right
+  const getFormationPositions = (count: number) => {
+    // Isometric positions: each unit offset diagonally
+    // For up to 5 units in a diagonal stagger
+    const positions: { x: number; y: number }[] = []
+    if (count <= 2) {
+      // Side by side with slight iso offset
+      for (let i = 0; i < count; i++) {
+        positions.push({ x: i * 72, y: i * 20 })
+      }
+    } else if (count <= 4) {
+      // 2 rows of 2, diamond stagger
+      const front = Math.ceil(count / 2)
+      const back = count - front
+      for (let i = 0; i < front; i++) {
+        positions.push({ x: i * 72, y: i * 20 })
+      }
+      for (let i = 0; i < back; i++) {
+        positions.push({ x: i * 72 + 36, y: i * 20 + 50 })
+      }
+    } else {
+      // 3-2 formation
+      for (let i = 0; i < 3; i++) {
+        positions.push({ x: i * 68, y: i * 18 })
+      }
+      for (let i = 0; i < count - 3; i++) {
+        positions.push({ x: i * 68 + 34, y: i * 18 + 48 })
+      }
+    }
+    return positions
+  }
+
+  const playerPositions = getFormationPositions(battleState.playerTeam.length)
+  const enemyPositions = getFormationPositions(battleState.enemyTeam.length)
+
+  // Compute bounding box for positioning
+  const pMaxX = Math.max(...playerPositions.map(p => p.x), 0)
+  const pMaxY = Math.max(...playerPositions.map(p => p.y), 0)
+  const eMaxX = Math.max(...enemyPositions.map(p => p.x), 0)
+  const eMaxY = Math.max(...enemyPositions.map(p => p.y), 0)
 
   return (
     <div className="fixed inset-0 bg-[#07030e] z-50 flex flex-col overflow-hidden">
-      {/* ── Top HUD bar ── */}
+      {/* ── Top HUD ── */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-black/70 border-b border-white/5 z-30 backdrop-blur-sm">
         <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{title}</span>
         <div className="flex items-center gap-2">
-          <span className="text-[9px] text-white/25 font-mono">Turn {battleState.turn}</span>
+          <span className="text-[8px] text-white/25 font-mono">Turn {battleState.turn}</span>
           <button
             onClick={() => setSpeed(s => s >= 3 ? 1 : s + 1)}
-            className="px-2 py-0.5 text-[9px] font-bold rounded bg-white/10 text-white/50 hover:text-white transition"
+            className="px-2 py-0.5 text-[8px] font-bold rounded bg-white/10 text-white/50 hover:text-white transition"
           >
             {speed}x
           </button>
           <button
             onClick={() => setAutoMode(!autoMode)}
-            className={`px-2 py-0.5 text-[9px] font-bold rounded transition ${
+            className={`px-2 py-0.5 text-[8px] font-bold rounded transition ${
               autoMode ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-white/10 text-white/50'
             }`}
           >
@@ -522,8 +613,8 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
         </div>
       </div>
 
-      {/* ── Turn order strip ── */}
-      <div className="px-2 py-1 z-20">
+      {/* ── Turn order ── */}
+      <div className="px-2 py-0.5 z-20">
         <TurnOrderBar
           turnOrder={battleState.turnOrder}
           allUnits={allUnits}
@@ -531,60 +622,144 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
         />
       </div>
 
-      {/* ══════ 3D BATTLEFIELD ══════ */}
-      <div
-        className="flex-1 relative overflow-hidden"
-        style={{ perspective: '800px' }}
-      >
-        {/* Arena ground with perspective grid */}
-        <ArenaGround />
-
-        {/* 3D tilted stage */}
+      {/* ═══════ ISOMETRIC BATTLEFIELD ═══════ */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Background — dark arena with radial glow */}
         <div
-          className="absolute inset-0 flex flex-col justify-between py-4"
+          className="absolute inset-0"
           style={{
-            transformStyle: 'preserve-3d',
-            transform: 'rotateX(12deg)',
-            transformOrigin: '50% 80%',
+            background: `
+              radial-gradient(ellipse 80% 50% at 50% 55%, rgba(30,10,60,0.8) 0%, transparent 70%),
+              radial-gradient(ellipse 40% 30% at 30% 70%, rgba(6,182,212,0.06) 0%, transparent 50%),
+              radial-gradient(ellipse 40% 30% at 70% 30%, rgba(239,68,68,0.06) 0%, transparent 50%),
+              linear-gradient(180deg, #07030e 0%, #0d0520 50%, #07030e 100%)
+            `,
+          }}
+        />
+
+        {/* Isometric ground grid — rotated 45deg, scaled for perspective */}
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden"
+          style={{ opacity: 0.12 }}
+        >
+          <div
+            className="absolute"
+            style={{
+              width: '200%',
+              height: '200%',
+              left: '-50%',
+              top: '-20%',
+              transform: 'rotateX(60deg) rotateZ(45deg)',
+              transformOrigin: '50% 50%',
+              backgroundImage: `
+                linear-gradient(rgba(150,100,255,0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(150,100,255,0.3) 1px, transparent 1px)
+              `,
+              backgroundSize: '40px 40px',
+            }}
+          />
+        </div>
+
+        {/* ── Enemy group — upper-right ── */}
+        <div
+          className="absolute z-10"
+          style={{
+            top: '8%',
+            right: '6%',
+            width: eMaxX + 80,
+            height: eMaxY + 130,
           }}
         >
-          {/* ── ENEMY ROW (far side, facing camera) ── */}
-          <div className="flex items-end justify-center px-4" style={{ gap: `${enemySpacing - 72}px` }}>
-            {battleState.enemyTeam.map(unit => (
-              <ModelSlot
-                key={unit.id}
-                unit={unit}
-                facing="front"
-                isActive={currentUnit?.id === unit.id}
-                floatingText={floatingTexts[unit.id] || null}
-                shakeClass={shakeUnits[unit.id] ? 'animate-shake' : ''}
-              />
-            ))}
+          {/* Diamond platform behind enemies */}
+          <div className="absolute inset-0 -z-10">
+            <IsoPlatform units={battleState.enemyTeam.length} side="enemy" />
           </div>
 
-          {/* Center divider — faint glow line */}
-          <div className="flex items-center justify-center">
-            <div className="w-48 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
-          </div>
-
-          {/* ── PLAYER ROW (near side, backs to camera) ── */}
-          <div className="flex items-start justify-center px-4" style={{ gap: `${playerSpacing - 72}px` }}>
-            {battleState.playerTeam.map(unit => (
-              <ModelSlot
+          {/* Enemy units */}
+          {battleState.enemyTeam.map((unit, idx) => {
+            const pos = enemyPositions[idx] || { x: 0, y: 0 }
+            return (
+              <div
                 key={unit.id}
-                unit={unit}
-                facing="back"
-                isActive={currentUnit?.id === unit.id}
-                floatingText={floatingTexts[unit.id] || null}
-                shakeClass={shakeUnits[unit.id] ? 'animate-shake' : ''}
-              />
-            ))}
+                className="absolute"
+                style={{ left: pos.x, top: pos.y }}
+              >
+                <IsoBattleUnit
+                  unit={unit}
+                  facing="lower-left"
+                  isActive={currentUnit?.id === unit.id}
+                  floatingText={floatingTexts[unit.id] || null}
+                  isShaking={!!shakeUnits[unit.id]}
+                />
+              </div>
+            )
+          })}
+
+          {/* "ENEMY" label */}
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+            <span className="text-[7px] text-red-400/40 uppercase tracking-widest font-bold">Enemy</span>
           </div>
         </div>
 
-        {/* Ambient glow effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-purple-500/5 blur-3xl rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-24 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
+        {/* ── Diagonal clash indicator (center) ── */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-5 pointer-events-none">
+          <div className="relative">
+            {/* Diagonal line connecting the two groups */}
+            <div
+              className="absolute w-40 h-px"
+              style={{
+                background: 'linear-gradient(90deg, rgba(6,182,212,0.2), rgba(150,100,255,0.15), rgba(239,68,68,0.2))',
+                transform: 'rotate(-30deg)',
+                transformOrigin: '50% 50%',
+                top: 0,
+                left: -80,
+              }}
+            />
+            {/* Center glow */}
+            <div className="w-8 h-8 rounded-full bg-purple-500/10 blur-xl" />
+          </div>
+        </div>
+
+        {/* ── Player group — bottom-left ── */}
+        <div
+          className="absolute z-10"
+          style={{
+            bottom: '8%',
+            left: '6%',
+            width: pMaxX + 80,
+            height: pMaxY + 130,
+          }}
+        >
+          {/* Diamond platform behind players */}
+          <div className="absolute inset-0 -z-10">
+            <IsoPlatform units={battleState.playerTeam.length} side="player" />
+          </div>
+
+          {/* Player units */}
+          {battleState.playerTeam.map((unit, idx) => {
+            const pos = playerPositions[idx] || { x: 0, y: 0 }
+            return (
+              <div
+                key={unit.id}
+                className="absolute"
+                style={{ left: pos.x, top: pos.y }}
+              >
+                <IsoBattleUnit
+                  unit={unit}
+                  facing="upper-right"
+                  isActive={currentUnit?.id === unit.id}
+                  floatingText={floatingTexts[unit.id] || null}
+                  isShaking={!!shakeUnits[unit.id]}
+                />
+              </div>
+            )
+          })}
+
+          {/* "YOUR TEAM" label */}
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+            <span className="text-[7px] text-cyan-400/40 uppercase tracking-widest font-bold">Your Team</span>
+          </div>
+        </div>
       </div>
 
       {/* ── Battle log ── */}
@@ -592,23 +767,21 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
         <BattleLog log={battleState.log} />
       </div>
 
-      {/* ── Skill bar (bottom HUD) ── */}
-      <div className="px-2 py-2 bg-black/80 border-t border-white/5 z-30 backdrop-blur-sm">
+      {/* ── Skill bar ── */}
+      <div className="px-2 py-1.5 bg-black/80 border-t border-white/5 z-30 backdrop-blur-sm">
         {isPlayerTurn && !autoMode ? (
           <div className="space-y-1">
-            <p className="text-[8px] text-yellow-400/50 uppercase tracking-widest text-center font-bold">
+            <p className="text-[7px] text-yellow-400/50 uppercase tracking-widest text-center font-bold">
               {currentUnit?.name}'s Turn
             </p>
             <div className="flex gap-1.5">
-              {/* Basic attack */}
               <button
                 onClick={() => handleSkillUse(-1)}
                 disabled={isProcessing}
-                className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-white/70 hover:bg-white/10 transition disabled:opacity-30"
+                className="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-white/70 hover:bg-white/10 transition disabled:opacity-30"
               >
                 Attack
               </button>
-              {/* Skills */}
               {currentUnit?.skills.map((skill, idx) => {
                 const onCd = skill.currentCd > 0
                 return (
@@ -616,7 +789,7 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
                     key={idx}
                     onClick={() => handleSkillUse(idx)}
                     disabled={onCd || isProcessing}
-                    className={`flex-1 py-2.5 rounded-lg border text-xs font-bold transition disabled:opacity-30 ${
+                    className={`flex-1 py-2 rounded-lg border text-[10px] font-bold transition disabled:opacity-30 ${
                       onCd
                         ? 'bg-white/[0.02] border-white/5 text-white/15'
                         : skill.type === 'heal' || skill.type === 'aoe_heal'
@@ -627,23 +800,23 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
                     }`}
                     title={skill.description}
                   >
-                    <span className="block truncate text-[10px]">{skill.name}</span>
-                    {onCd && <span className="text-[7px] text-white/25">CD:{skill.currentCd}</span>}
+                    <span className="block truncate">{skill.name}</span>
+                    {onCd && <span className="text-[6px] text-white/25">CD:{skill.currentCd}</span>}
                   </button>
                 )
               })}
             </div>
           </div>
         ) : (
-          <div className="text-center py-2">
-            <p className="text-[9px] text-white/25 animate-pulse">
+          <div className="text-center py-1.5">
+            <p className="text-[8px] text-white/25 animate-pulse">
               {autoMode ? 'Auto-battling...' : `${currentUnit?.name || 'Enemy'} is acting...`}
             </p>
           </div>
         )}
       </div>
 
-      {/* Inline CSS for shake animation */}
+      {/* Shake animation */}
       <style>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
