@@ -75,7 +75,7 @@ function IsoBattleUnit({
     >
       {/* Floating damage / heal text */}
       {floatingText && (
-        <div className={`absolute -top-8 left-1/2 -translate-x-1/2 text-sm font-black z-30 whitespace-nowrap drop-shadow-lg animate-bounce ${
+        <div className={`absolute -top-10 left-1/2 -translate-x-1/2 text-base font-black z-30 whitespace-nowrap drop-shadow-lg animate-bounce ${
           floatingText.startsWith('+') ? 'text-green-400' : floatingText.includes('CRIT') ? 'text-yellow-300' : 'text-red-400'
         }`}>
           {floatingText}
@@ -84,10 +84,10 @@ function IsoBattleUnit({
 
       {/* 3D model placeholder */}
       <div
-        className="relative overflow-hidden rounded-lg"
+        className="relative overflow-hidden rounded-xl"
         style={{
-          width: 56,
-          height: 72,
+          width: 80,
+          height: 108,
           border: `2px solid ${borderCol}`,
           boxShadow: glowShadow,
           background: `linear-gradient(${facing === 'lower-left' ? '200deg' : '20deg'}, rgba(255,255,255,0.06), rgba(0,0,0,0.4))`,
@@ -97,7 +97,7 @@ function IsoBattleUnit({
         <div className="absolute inset-0 flex items-center justify-center">
           {facing === 'upper-right' ? (
             /* Player hero — back turned, facing upper-right */
-            <svg viewBox="0 0 48 64" className="w-9 h-12 opacity-25" style={{ transform: 'scaleX(-1)' }}>
+            <svg viewBox="0 0 48 64" className="w-14 h-[4.5rem] opacity-25" style={{ transform: 'scaleX(-1)' }}>
               <ellipse cx="24" cy="12" rx="8" ry="10" fill="#67e8f9" />
               <rect x="15" y="20" width="18" height="24" rx="3" fill="#67e8f9" />
               <rect x="10" y="23" width="6" height="16" rx="2" fill="#67e8f9" />
@@ -107,7 +107,7 @@ function IsoBattleUnit({
             </svg>
           ) : (
             /* Enemy — facing lower-left toward camera/player */
-            <svg viewBox="0 0 48 64" className="w-9 h-12 opacity-25">
+            <svg viewBox="0 0 48 64" className="w-14 h-[4.5rem] opacity-25">
               <ellipse cx="24" cy="12" rx="8" ry="10" fill="#f87171" />
               <circle cx="20" cy="10" r="1.5" fill="#fca5a5" />
               <circle cx="28" cy="10" r="1.5" fill="#fca5a5" />
@@ -121,41 +121,41 @@ function IsoBattleUnit({
         </div>
 
         {/* Role badge */}
-        <div className="absolute top-0.5 right-0.5 text-[10px] opacity-60">
+        <div className="absolute top-1 right-1 text-sm opacity-60">
           {unit.role === 'offensive' ? '⚔️' : unit.role === 'defensive' ? '🛡️' : '✨'}
         </div>
 
         {/* Model ID watermark */}
-        <div className="absolute bottom-0.5 left-0.5 right-0.5 text-[5px] text-white/10 truncate text-center">
+        <div className="absolute bottom-1 left-1 right-1 text-[6px] text-white/10 truncate text-center">
           {unit.modelId}
         </div>
 
         {/* Death overlay */}
         {!unit.isAlive && (
           <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
-            <span className="text-lg">💀</span>
+            <span className="text-2xl">💀</span>
           </div>
         )}
 
         {/* Active glow pulse */}
         {isActive && unit.isAlive && (
-          <div className="absolute -inset-0.5 rounded-lg border-2 border-yellow-400/50 animate-pulse pointer-events-none" />
+          <div className="absolute -inset-0.5 rounded-xl border-2 border-yellow-400/50 animate-pulse pointer-events-none" />
         )}
       </div>
 
       {/* Isometric floor tile under the unit */}
-      <div className="relative w-14 h-5 -mt-1">
-        <IsoTile color={tileColor} size={56} />
+      <div className="relative w-20 h-7 -mt-1">
+        <IsoTile color={tileColor} size={80} />
       </div>
 
       {/* Name + HP */}
-      <div className="w-16 text-center -mt-0.5">
-        <p className="text-[8px] font-bold text-white truncate">{unit.name}</p>
+      <div className="w-22 text-center -mt-0.5">
+        <p className="text-[9px] font-bold text-white truncate">{unit.name}</p>
         <HpBarCompact current={unit.currentHp} max={unit.maxHp} />
         {unit.statusEffects.length > 0 && (
-          <div className="flex flex-wrap gap-px mt-px justify-center">
+          <div className="flex flex-wrap gap-0.5 mt-0.5 justify-center">
             {unit.statusEffects.map((e, i) => (
-              <span key={`${e.type}-${i}`} className="text-[7px]" title={`${e.type} (${e.duration}t)`}>
+              <span key={`${e.type}-${i}`} className="text-[8px]" title={`${e.type} (${e.duration}t)`}>
                 {statusIcons[e.type]}
               </span>
             ))}
@@ -171,7 +171,7 @@ function HpBarCompact({ current, max }: { current: number; max: number }) {
   const color = pct > 60 ? 'bg-green-500' : pct > 30 ? 'bg-yellow-500' : 'bg-red-500'
 
   return (
-    <div className="w-full h-1 rounded-full bg-black/60 overflow-hidden mt-px">
+    <div className="w-full h-1.5 rounded-full bg-black/60 overflow-hidden mt-0.5">
       <div
         className={`h-full rounded-full ${color} transition-all duration-500`}
         style={{ width: `${pct}%` }}
@@ -183,7 +183,7 @@ function HpBarCompact({ current, max }: { current: number; max: number }) {
 /* ─────────── Isometric diamond platform ─────────── */
 function IsoPlatform({ units, side }: { units: number; side: 'player' | 'enemy' }) {
   // Build a diamond grid of tiles for the platform
-  const tileSize = 40
+  const tileSize = 64
   const cols = Math.min(units, 3)
   const rows = Math.ceil(units / cols)
   const baseColor = side === 'player' ? 'rgba(6,182,212,' : 'rgba(239,68,68,'
@@ -551,30 +551,27 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
   // Enemy: same, upper-right
   const getFormationPositions = (count: number) => {
     // Isometric positions: each unit offset diagonally
-    // For up to 5 units in a diagonal stagger
+    // Bigger spacing for larger character models
     const positions: { x: number; y: number }[] = []
     if (count <= 2) {
-      // Side by side with slight iso offset
       for (let i = 0; i < count; i++) {
-        positions.push({ x: i * 72, y: i * 20 })
+        positions.push({ x: i * 96, y: i * 28 })
       }
     } else if (count <= 4) {
-      // 2 rows of 2, diamond stagger
       const front = Math.ceil(count / 2)
       const back = count - front
       for (let i = 0; i < front; i++) {
-        positions.push({ x: i * 72, y: i * 20 })
+        positions.push({ x: i * 96, y: i * 28 })
       }
       for (let i = 0; i < back; i++) {
-        positions.push({ x: i * 72 + 36, y: i * 20 + 50 })
+        positions.push({ x: i * 96 + 48, y: i * 28 + 64 })
       }
     } else {
-      // 3-2 formation
       for (let i = 0; i < 3; i++) {
-        positions.push({ x: i * 68, y: i * 18 })
+        positions.push({ x: i * 92, y: i * 26 })
       }
       for (let i = 0; i < count - 3; i++) {
-        positions.push({ x: i * 68 + 34, y: i * 18 + 48 })
+        positions.push({ x: i * 92 + 46, y: i * 26 + 60 })
       }
     }
     return positions
@@ -660,14 +657,14 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
           />
         </div>
 
-        {/* ── Enemy group — upper-right ── */}
+        {/* ── Enemy group — upper-right, pulled toward center ── */}
         <div
           className="absolute z-10"
           style={{
-            top: '8%',
-            right: '6%',
-            width: eMaxX + 80,
-            height: eMaxY + 130,
+            top: '4%',
+            right: '14%',
+            width: eMaxX + 110,
+            height: eMaxY + 170,
           }}
         >
           {/* Diamond platform behind enemies */}
@@ -720,14 +717,14 @@ export default function BattlePage({ playerTeam, enemyTeam, title, onResult }: B
           </div>
         </div>
 
-        {/* ── Player group — bottom-left ── */}
+        {/* ── Player group — bottom-left, pulled toward center ── */}
         <div
           className="absolute z-10"
           style={{
-            bottom: '8%',
-            left: '6%',
-            width: pMaxX + 80,
-            height: pMaxY + 130,
+            bottom: '4%',
+            left: '14%',
+            width: pMaxX + 110,
+            height: pMaxY + 170,
           }}
         >
           {/* Diamond platform behind players */}
