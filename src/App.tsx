@@ -14,6 +14,7 @@ import AchievementsPage from './components/AchievementsPage'
 import GuildPage from './components/GuildPage'
 import BattlePassPage from './components/BattlePassPage'
 import ToastContainer from './components/ToastContainer'
+import OnboardingOverlay from './components/OnboardingOverlay'
 import { useGameStore } from './lib/store'
 import { useNotifications } from './lib/notifications'
 import { BP_XP_REWARDS } from './lib/battle-pass-data'
@@ -115,6 +116,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0a060f] flex flex-col">
+      <OnboardingOverlay />
       <ToastContainer />
       <div className="flex-1 overflow-hidden">
         <div

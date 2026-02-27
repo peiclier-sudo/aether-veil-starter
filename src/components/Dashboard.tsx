@@ -1,4 +1,4 @@
-import { useGameStore, MAX_ENERGY } from '@/lib/store'
+import { useGameStore, MAX_ENERGY, getPlayerLevel } from '@/lib/store'
 import { generateHeroPortrait } from '@/lib/hero-portraits'
 import { useNotifications } from '@/lib/notifications'
 import { getDailyQuests, DailyQuest } from '@/lib/daily-quests'
@@ -7,7 +7,8 @@ import HeroCard from './HeroCard'
 import { useMemo, useState } from 'react'
 
 function PlayerTopBar() {
-  const { playerName, level, aetherShards, energy } = useGameStore()
+  const { playerName, level, playerXp, aetherShards, energy } = useGameStore()
+  const { progress } = getPlayerLevel(playerXp)
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-black/60 backdrop-blur-md border-b border-white/10 animate-[slide-down_0.4s_ease-out]">
       {/* Player info */}
@@ -18,7 +19,7 @@ function PlayerTopBar() {
         <div>
           <p className="text-sm font-bold text-white">{playerName}</p>
           <div className="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full animate-[grow-width_1s_ease-out]" style={{ width: '65%' }} />
+            <div className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-500" style={{ width: `${Math.round(progress * 100)}%` }} />
           </div>
         </div>
       </div>
@@ -204,17 +205,14 @@ function QuickActions({ onNavigate }: { onNavigate: (page: string) => void }) {
 }
 
 function DailyQuestsCard() {
-  const { dailyQuestProgress, claimDailyQuestReward, addShards, addEnergy, addBattlePassXp } = useGameStore()
+  const { dailyQuestProgress, claimDailyQuestReward } = useGameStore()
   const { addToast } = useNotifications()
   const today = new Date().toISOString().slice(0, 10)
   const quests = useMemo(() => getDailyQuests(today), [today])
 
   const handleClaim = (quest: DailyQuest) => {
-    const success = claimDailyQuestReward(quest.id)
+    const success = claimDailyQuestReward(quest.id, quest.reward)
     if (success) {
-      addShards(quest.reward.shards)
-      if (quest.reward.energy) addEnergy(quest.reward.energy)
-      addBattlePassXp(quest.reward.bpXp)
       addToast({ type: 'reward', title: quest.name, message: `+${quest.reward.shards} shards +${quest.reward.bpXp} BP XP`, icon: quest.icon })
     }
   }

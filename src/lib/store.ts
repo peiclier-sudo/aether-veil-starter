@@ -69,10 +69,18 @@ import { DailyQuestProgress } from './daily-quests'
 
 export const MAX_ENERGY = 120
 export const ENERGY_REGEN_INTERVAL_MS = 300000 // 5 minutes per 1 energy
+export const XP_PER_LEVEL = 1000
+export const MAX_PLAYER_LEVEL = 60
+export function getPlayerLevel(xp: number) {
+  const level = Math.min(MAX_PLAYER_LEVEL, Math.floor(xp / XP_PER_LEVEL) + 1)
+  const progress = level >= MAX_PLAYER_LEVEL ? 1 : (xp % XP_PER_LEVEL) / XP_PER_LEVEL
+  return { level, progress }
+}
 
 export interface PlayerState {
   playerName: string
   level: number
+  playerXp: number
   aetherShards: number
   energy: number
   lastEnergyUpdate: number
@@ -102,6 +110,7 @@ export interface PlayerState {
   battlePass: BattlePassState
   dailyQuestProgress: DailyQuestProgress
   starterPackPurchased: boolean
+  onboardingComplete: boolean
   addHero: (hero: Hero) => void
   equipGear: (heroId: string, gear: Gear) => void
   unequipGear: (heroId: string, slot: Gear['slot']) => void
@@ -138,7 +147,9 @@ export interface PlayerState {
   unlockPremiumPass: () => boolean
   claimBattlePassReward: (level: number, track: 'free' | 'premium') => boolean
   trackDailyQuest: (key: string, amount?: number) => void
-  claimDailyQuestReward: (questId: string) => boolean
+  claimDailyQuestReward: (questId: string, reward?: { shards: number; energy?: number; bpXp: number }) => boolean
+  addPlayerXp: (xp: number) => void
+  completeOnboarding: () => void
   purchaseStarterPack: () => boolean
 }
 
@@ -185,6 +196,7 @@ export const useGameStore = create<PlayerState>()(
     (set, get) => ({
       playerName: 'Echo Warden',
       level: 1,
+      playerXp: 0,
       aetherShards: 2500,
       energy: 120,
       lastEnergyUpdate: Date.now(),
@@ -214,6 +226,7 @@ export const useGameStore = create<PlayerState>()(
       battlePass: { seasonId: CURRENT_SEASON, isPremium: false, xp: 0, claimedFree: [], claimedPremium: [] },
       dailyQuestProgress: { date: new Date().toISOString().slice(0, 10), progress: { loginToday: 1 }, claimed: [] },
       starterPackPurchased: false,
+      onboardingComplete: false,
 
       addHero: (hero) => set((state) => ({ heroes: [...state.heroes, hero] })),
       equipGear: (heroId, gear) =>
@@ -264,17 +277,27 @@ export const useGameStore = create<PlayerState>()(
       addEnergy: (amount) => set((state) => ({ energy: Math.min(state.energy + amount, MAX_ENERGY) })),
       incrementSummons: (count) => set((state) => ({ totalSummons: state.totalSummons + count })),
       completeCampaignStage: (stageId, stars) =>
-        set((state) => ({
-          campaignStages: state.campaignStages.map((s) =>
-            s.id === stageId ? { ...s, completed: true, stars: Math.max(s.stars, stars) } : s
-          )
-        })),
+        set((state) => {
+          const xp = state.playerXp + 100
+          return {
+            campaignStages: state.campaignStages.map((s) =>
+              s.id === stageId ? { ...s, completed: true, stars: Math.max(s.stars, stars) } : s
+            ),
+            playerXp: xp,
+            level: getPlayerLevel(xp).level,
+          }
+        }),
       updateArenaRating: (change, won) =>
-        set((state) => ({
-          arenaRating: Math.max(0, state.arenaRating + change),
-          arenaWins: won ? state.arenaWins + 1 : state.arenaWins,
-          arenaLosses: won ? state.arenaLosses : state.arenaLosses + 1,
-        })),
+        set((state) => {
+          const xp = state.playerXp + (won ? 50 : 15)
+          return {
+            arenaRating: Math.max(0, state.arenaRating + change),
+            arenaWins: won ? state.arenaWins + 1 : state.arenaWins,
+            arenaLosses: won ? state.arenaLosses : state.arenaLosses + 1,
+            playerXp: xp,
+            level: getPlayerLevel(xp).level,
+          }
+        }),
 
       // New v5 actions
       ascendHero: (heroId, fodderIds) => {
@@ -363,7 +386,10 @@ export const useGameStore = create<PlayerState>()(
           ),
         }))
       },
-      incrementDungeonClears: () => set((state) => ({ dungeonClears: state.dungeonClears + 1 })),
+      incrementDungeonClears: () => set((state) => {
+        const xp = state.playerXp + 75
+        return { dungeonClears: state.dungeonClears + 1, playerXp: xp, level: getPlayerLevel(xp).level }
+      }),
       createGuild: (name) => {
         const state = get()
         if (state.guild || state.aetherShards < GUILD_CREATION_COST) return false
@@ -431,7 +457,10 @@ export const useGameStore = create<PlayerState>()(
         set({ dailyRewardClaimed: true, aetherShards: state.aetherShards + reward })
         return reward
       },
-      incrementBattlesWon: () => set((state) => ({ totalBattlesWon: state.totalBattlesWon + 1 })),
+      incrementBattlesWon: () => set((state) => {
+        const xp = state.playerXp + 25
+        return { totalBattlesWon: state.totalBattlesWon + 1, playerXp: xp, level: getPlayerLevel(xp).level }
+      }),
       addBattlePassXp: (xp) => set((state) => ({ battlePass: { ...state.battlePass, xp: state.battlePass.xp + xp } })),
       unlockPremiumPass: () => {
         const state = get()
@@ -459,19 +488,39 @@ export const useGameStore = create<PlayerState>()(
         const current = dqp.progress[key] || 0
         set({ dailyQuestProgress: { ...dqp, progress: { ...dqp.progress, [key]: current + amount } } })
       },
-      claimDailyQuestReward: (questId) => {
+      claimDailyQuestReward: (questId, reward) => {
         const state = get()
         const dqp = state.dailyQuestProgress
         if (dqp.claimed.includes(questId)) return false
-        set({ dailyQuestProgress: { ...dqp, claimed: [...dqp.claimed, questId] } })
+        const updates: Partial<PlayerState> = {
+          dailyQuestProgress: { ...dqp, claimed: [...dqp.claimed, questId] },
+        }
+        if (reward) {
+          updates.aetherShards = state.aetherShards + reward.shards
+          if (reward.energy) updates.energy = Math.min(state.energy + reward.energy, MAX_ENERGY)
+          updates.battlePass = { ...state.battlePass, xp: state.battlePass.xp + reward.bpXp }
+        }
+        set(updates as any)
         return true
       },
+      completeOnboarding: () => set({ onboardingComplete: true }),
+      addPlayerXp: (xp) => set((state) => {
+        const newXp = state.playerXp + xp
+        return { playerXp: newXp, level: getPlayerLevel(newXp).level }
+      }),
       purchaseStarterPack: () => {
         const state = get()
         if (state.starterPackPurchased) return false
         const cost = 500
         if (state.aetherShards < cost) return false
-        set({ starterPackPurchased: true, aetherShards: state.aetherShards - cost + 3000, energy: MAX_ENERGY, totalShardsSpent: state.totalShardsSpent + cost })
+        const bonusHeroes = Array.from({ length: 5 }, () => summonHero())
+        set({
+          starterPackPurchased: true,
+          aetherShards: state.aetherShards - cost + 3000,
+          energy: MAX_ENERGY,
+          heroes: [...state.heroes, ...bonusHeroes],
+          totalShardsSpent: state.totalShardsSpent + cost,
+        })
         return true
       },
     }),
@@ -507,6 +556,9 @@ export const useGameStore = create<PlayerState>()(
         if (!state.battlePass) state.battlePass = { seasonId: CURRENT_SEASON, isPremium: false, xp: 0, claimedFree: [], claimedPremium: [] }
         if (!state.dailyQuestProgress) state.dailyQuestProgress = { date: new Date().toISOString().slice(0, 10), progress: { loginToday: 1 }, claimed: [] }
         if (state.starterPackPurchased === undefined) state.starterPackPurchased = false
+        if (state.playerXp === undefined) state.playerXp = 0
+        if (state.playerXp !== undefined) state.level = getPlayerLevel(state.playerXp).level
+        if (state.onboardingComplete === undefined) state.onboardingComplete = false
         if (state.heroes) {
           state.heroes = state.heroes.map((h: any) => ({
             ...h,
