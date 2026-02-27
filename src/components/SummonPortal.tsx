@@ -3,6 +3,7 @@ import { useGameStore, Hero } from '@/lib/store'
 import { summonHero, summonMultiple, SUMMON_COST_SINGLE, SUMMON_COST_TEN, DROP_RATES } from '@/lib/summon-pool'
 import { generateHeroPortrait } from '@/lib/hero-portraits'
 import { BP_XP_REWARDS } from '@/lib/battle-pass-data'
+import { useNotifications } from '@/lib/notifications'
 
 const rarityColor: Record<string, string> = {
   common: 'text-zinc-400 border-zinc-500',
@@ -161,14 +162,42 @@ function SummonResults({ heroes, onClose }: { heroes: Hero[]; onClose: () => voi
 
 export default function SummonPortal({ onBack }: { onBack: () => void }) {
   const { aetherShards, addHero, spendShards, incrementSummons, totalSummons, trackDailyQuest, addBattlePassXp } = useGameStore()
+  const { addToast } = useNotifications()
   const [results, setResults] = useState<Hero[] | null>(null)
   const [showRates, setShowRates] = useState(false)
   const [summoning, setSummoning] = useState(false)
 
+  const summarizePull = useCallback((heroes: Hero[]) => {
+    const legendaries = heroes.filter(h => h.rarity === 'legendary')
+    const epics = heroes.filter(h => h.rarity === 'epic')
+    if (legendaries.length > 0) {
+      addToast({
+        type: 'achievement',
+        title: 'Legendary Pull!',
+        message: legendaries.map(h => h.name).join(', '),
+        icon: '🌟',
+        duration: 5000,
+      })
+    } else if (epics.length > 0) {
+      addToast({
+        type: 'reward',
+        title: `${epics.length} Epic${epics.length > 1 ? 's' : ''} Summoned`,
+        message: epics.map(h => h.name).join(', '),
+        icon: '✨',
+      })
+    } else {
+      addToast({
+        type: 'info',
+        title: `${heroes.length}x Summoned`,
+        message: `${heroes.length} hero${heroes.length > 1 ? 'es' : ''} added to roster`,
+        icon: '🌀',
+      })
+    }
+  }, [addToast])
+
   const handleSingleSummon = useCallback(() => {
     if (!spendShards(SUMMON_COST_SINGLE) || summoning) return
     setSummoning(true)
-    // Brief charging delay before reveal
     setTimeout(() => {
       const hero = summonHero()
       addHero(hero)
@@ -176,9 +205,10 @@ export default function SummonPortal({ onBack }: { onBack: () => void }) {
       trackDailyQuest('summonsToday')
       addBattlePassXp(BP_XP_REWARDS.summon)
       setResults([hero])
+      summarizePull([hero])
       setSummoning(false)
     }, 600)
-  }, [spendShards, addHero, incrementSummons, summoning])
+  }, [spendShards, addHero, incrementSummons, summoning, summarizePull])
 
   const handleTenSummon = useCallback(() => {
     if (!spendShards(SUMMON_COST_TEN) || summoning) return
@@ -190,9 +220,10 @@ export default function SummonPortal({ onBack }: { onBack: () => void }) {
       trackDailyQuest('summonsToday', 10)
       addBattlePassXp(BP_XP_REWARDS.summon * 10)
       setResults(heroes)
+      summarizePull(heroes)
       setSummoning(false)
     }, 800)
-  }, [spendShards, addHero, incrementSummons, summoning])
+  }, [spendShards, addHero, incrementSummons, summoning, summarizePull])
 
   const canAffordSingle = aetherShards >= SUMMON_COST_SINGLE
   const canAffordTen = aetherShards >= SUMMON_COST_TEN

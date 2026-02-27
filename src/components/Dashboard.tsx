@@ -196,7 +196,7 @@ function QuickActions({ onNavigate }: { onNavigate: (page: string) => void }) {
     { label: 'Bonds', icon: '🔗', desc: 'Faction synergy', page: 'resonance', glow: 'hover:shadow-pink-500/20' },
   ]
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
       {actions.map((a, i) => (
         <button
           key={a.label}
