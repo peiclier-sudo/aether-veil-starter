@@ -13,14 +13,16 @@ export default defineConfig({
       manifest: {
         name: 'Aether Veil: Luminara Echoes',
         short_name: 'Luminara',
-        description: 'Mature luminous 3D gacha RPG',
-        theme_color: '#1a1423',
-        background_color: '#0f0a14',
-        display: 'fullscreen',
+        description: 'Luminous gacha RPG — summon heroes, conquer campaigns',
+        theme_color: '#0f0d14',
+        background_color: '#0f0d14',
+        display: 'standalone',
         start_url: '/',
         icons: [
-          { src: '/favicon.svg', sizes: '192x192', type: 'image/svg+xml' },
-          { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' }
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }
         ]
       },
       workbox: {
