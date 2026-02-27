@@ -1,7 +1,8 @@
-import { useGameStore } from '@/lib/store'
+import { useGameStore, MAX_ENERGY } from '@/lib/store'
 import { generateHeroPortrait } from '@/lib/hero-portraits'
+import { useNotifications } from '@/lib/notifications'
 import HeroCard from './HeroCard'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 function PlayerTopBar() {
   const { playerName, level, aetherShards, energy } = useGameStore()
@@ -25,12 +26,64 @@ function PlayerTopBar() {
         <div className="flex items-center gap-1.5 group">
           <span className="text-green-400 text-sm group-hover:animate-pulse">⚡</span>
           <span className="text-sm font-mono text-white">{energy}</span>
-          <span className="text-[10px] text-white/40">/120</span>
+          <span className="text-[10px] text-white/40">/{MAX_ENERGY}</span>
         </div>
         <div className="flex items-center gap-1.5 group">
           <span className="text-purple-400 text-sm group-hover:animate-pulse">💎</span>
           <span className="text-sm font-mono text-white">{aetherShards.toLocaleString()}</span>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function DailyLoginBanner() {
+  const { loginStreak, dailyRewardClaimed, claimDailyReward } = useGameStore()
+  const { addToast } = useNotifications()
+  const [claimed, setClaimed] = useState(false)
+
+  if (dailyRewardClaimed || claimed) return null
+
+  const handleClaim = () => {
+    const reward = claimDailyReward()
+    if (reward > 0) {
+      setClaimed(true)
+      addToast({ type: 'reward', title: `Day ${loginStreak} Reward!`, message: `+${reward} shards`, icon: '🔥' })
+    }
+  }
+
+  const streakBonus = Math.min(loginStreak, 7) * 25
+  const totalReward = 100 + streakBonus
+
+  return (
+    <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-r from-orange-500/15 to-yellow-500/10 p-4 animate-[fade-up_0.5s_ease-out] overflow-hidden relative">
+      <div className="absolute -right-4 -top-4 text-6xl opacity-10">🔥</div>
+      <div className="relative z-10 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">🔥</span>
+            <h3 className="text-sm font-bold text-orange-300">Day {loginStreak} Login Streak!</h3>
+          </div>
+          <p className="text-[10px] text-white/40">Claim your daily reward: 💎 {totalReward} shards</p>
+          <div className="flex gap-1 mt-2">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-5 h-5 rounded text-[9px] flex items-center justify-center font-bold ${
+                  i < loginStreak ? 'bg-orange-500/30 text-orange-300' : 'bg-white/5 text-white/20'
+                }`}
+              >
+                {i + 1}
+              </div>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={handleClaim}
+          className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-yellow-500 text-black font-bold text-sm rounded-xl hover:brightness-110 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-orange-500/30"
+        >
+          Claim!
+        </button>
       </div>
     </div>
   )
@@ -160,6 +213,9 @@ export default function Dashboard({ onNavigate }: { onNavigate: (page: string) =
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+          {/* Daily login banner */}
+          <DailyLoginBanner />
+
           {/* Featured hero showcase */}
           {featured && (
             <FeaturedHero hero={featured} onViewRoster={() => onNavigate('roster')} />

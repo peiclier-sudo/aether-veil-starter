@@ -64,11 +64,18 @@ export interface AchievementProgress {
   claimedTier: number
 }
 
+export const MAX_ENERGY = 120
+export const ENERGY_REGEN_INTERVAL_MS = 300000 // 5 minutes per 1 energy
+
 export interface PlayerState {
   playerName: string
   level: number
   aetherShards: number
   energy: number
+  lastEnergyUpdate: number
+  lastLoginDate: string
+  loginStreak: number
+  dailyRewardClaimed: boolean
   heroes: Hero[]
   inventory: Gear[]
   activeResonanceBonds: ResonanceBond[]
@@ -88,6 +95,7 @@ export interface PlayerState {
   totalShardsSpent: number
   totalGearSold: number
   totalShopPurchases: number
+  totalBattlesWon: number
   addHero: (hero: Hero) => void
   equipGear: (heroId: string, gear: Gear) => void
   unequipGear: (heroId: string, slot: Gear['slot']) => void
@@ -116,6 +124,10 @@ export interface PlayerState {
   donateToGuild: (amount: number) => boolean
   attackGuildBoss: (damage: number) => { killed: boolean; reward: number }
   removeHero: (heroId: string) => void
+  tickEnergyRegen: () => void
+  checkDailyLogin: () => { isNewDay: boolean; streak: number }
+  claimDailyReward: () => number
+  incrementBattlesWon: () => void
 }
 
 const seedHeroes: Hero[] = [
@@ -163,6 +175,10 @@ export const useGameStore = create<PlayerState>()(
       level: 1,
       aetherShards: 2500,
       energy: 120,
+      lastEnergyUpdate: Date.now(),
+      lastLoginDate: new Date().toISOString().slice(0, 10),
+      loginStreak: 1,
+      dailyRewardClaimed: false,
       heroes: seedHeroes,
       inventory: [],
       activeResonanceBonds: [],
@@ -182,6 +198,7 @@ export const useGameStore = create<PlayerState>()(
       totalShardsSpent: 0,
       totalGearSold: 0,
       totalShopPurchases: 0,
+      totalBattlesWon: 0,
 
       addHero: (hero) => set((state) => ({ heroes: [...state.heroes, hero] })),
       equipGear: (heroId, gear) =>
@@ -229,7 +246,7 @@ export const useGameStore = create<PlayerState>()(
         return true
       },
       addShards: (amount) => set((state) => ({ aetherShards: state.aetherShards + amount })),
-      addEnergy: (amount) => set((state) => ({ energy: Math.min(state.energy + amount, 120) })),
+      addEnergy: (amount) => set((state) => ({ energy: Math.min(state.energy + amount, MAX_ENERGY) })),
       incrementSummons: (count) => set((state) => ({ totalSummons: state.totalSummons + count })),
       completeCampaignStage: (stageId, stars) =>
         set((state) => ({
@@ -367,10 +384,43 @@ export const useGameStore = create<PlayerState>()(
         return { killed: false, reward: 0 }
       },
       removeHero: (heroId) => set((state) => ({ heroes: state.heroes.filter(h => h.id !== heroId), currentTeam: state.currentTeam.filter(id => id !== heroId) })),
+      tickEnergyRegen: () => {
+        const state = get()
+        if (state.energy >= MAX_ENERGY) {
+          set({ lastEnergyUpdate: Date.now() })
+          return
+        }
+        const now = Date.now()
+        const elapsed = now - state.lastEnergyUpdate
+        const ticks = Math.floor(elapsed / ENERGY_REGEN_INTERVAL_MS)
+        if (ticks > 0) {
+          const newEnergy = Math.min(MAX_ENERGY, state.energy + ticks)
+          set({ energy: newEnergy, lastEnergyUpdate: state.lastEnergyUpdate + ticks * ENERGY_REGEN_INTERVAL_MS })
+        }
+      },
+      checkDailyLogin: () => {
+        const state = get()
+        const today = new Date().toISOString().slice(0, 10)
+        if (state.lastLoginDate === today) return { isNewDay: false, streak: state.loginStreak }
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+        const newStreak = state.lastLoginDate === yesterday ? state.loginStreak + 1 : 1
+        set({ lastLoginDate: today, loginStreak: newStreak, dailyRewardClaimed: false })
+        return { isNewDay: true, streak: newStreak }
+      },
+      claimDailyReward: () => {
+        const state = get()
+        if (state.dailyRewardClaimed) return 0
+        const baseReward = 100
+        const streakBonus = Math.min(state.loginStreak, 7) * 25
+        const reward = baseReward + streakBonus
+        set({ dailyRewardClaimed: true, aetherShards: state.aetherShards + reward })
+        return reward
+      },
+      incrementBattlesWon: () => set((state) => ({ totalBattlesWon: state.totalBattlesWon + 1 })),
     }),
     {
       name: 'aether-veil-storage',
-      version: 5,
+      version: 6,
       migrate: (persisted: any) => {
         const state = persisted || {}
         if (!state.heroes || state.heroes.length === 0) state.heroes = seedHeroes
@@ -390,6 +440,12 @@ export const useGameStore = create<PlayerState>()(
         if (state.totalShardsSpent === undefined) state.totalShardsSpent = 0
         if (state.totalGearSold === undefined) state.totalGearSold = 0
         if (state.totalShopPurchases === undefined) state.totalShopPurchases = 0
+        // v6 fields
+        if (state.lastEnergyUpdate === undefined) state.lastEnergyUpdate = Date.now()
+        if (state.lastLoginDate === undefined) state.lastLoginDate = new Date().toISOString().slice(0, 10)
+        if (state.loginStreak === undefined) state.loginStreak = 1
+        if (state.dailyRewardClaimed === undefined) state.dailyRewardClaimed = false
+        if (state.totalBattlesWon === undefined) state.totalBattlesWon = 0
         if (state.heroes) {
           state.heroes = state.heroes.map((h: any) => ({
             ...h,

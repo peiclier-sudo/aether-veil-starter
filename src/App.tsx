@@ -12,6 +12,9 @@ import ShopPage from './components/ShopPage'
 import InventoryPage from './components/InventoryPage'
 import AchievementsPage from './components/AchievementsPage'
 import GuildPage from './components/GuildPage'
+import ToastContainer from './components/ToastContainer'
+import { useGameStore } from './lib/store'
+import { useNotifications } from './lib/notifications'
 
 const navItems = [
   { id: 'home', label: 'Home', icon: '🏠' },
@@ -26,6 +29,32 @@ function App() {
   const [transitioning, setTransitioning] = useState(false)
   const [displayedPage, setDisplayedPage] = useState('home')
   const pendingPage = useRef<string | null>(null)
+  const { tickEnergyRegen, checkDailyLogin } = useGameStore()
+  const { addToast } = useNotifications()
+  const dailyChecked = useRef(false)
+
+  // Energy regeneration tick every 30s
+  useEffect(() => {
+    tickEnergyRegen()
+    const interval = setInterval(tickEnergyRegen, 30000)
+    return () => clearInterval(interval)
+  }, [tickEnergyRegen])
+
+  // Daily login check
+  useEffect(() => {
+    if (dailyChecked.current) return
+    dailyChecked.current = true
+    const result = checkDailyLogin()
+    if (result.isNewDay) {
+      addToast({
+        type: 'reward',
+        title: `Day ${result.streak} Login Streak!`,
+        message: 'Claim your daily reward on the dashboard',
+        icon: '🔥',
+        duration: 5000,
+      })
+    }
+  }, [checkDailyLogin, addToast])
 
   const navigate = useCallback((target: string) => {
     if (target === displayedPage || transitioning) return
@@ -81,6 +110,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0a060f] flex flex-col">
+      <ToastContainer />
       <div className="flex-1 overflow-hidden">
         <div
           className="h-full transition-all duration-150 ease-in-out"
