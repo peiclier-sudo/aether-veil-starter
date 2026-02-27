@@ -1,144 +1,119 @@
 -- =============================================
--- Aether Veil: Luminara Echoes – Complete Database Schema v1.1 (FIXED)
+-- Aether Veil: Luminara Echoes – Database Schema v2.0
+-- Supports auth, cloud save, and real-money purchases
 -- Run this entire file in Supabase SQL Editor
 -- =============================================
 
--- Drop existing tables if you want a clean start (uncomment if needed)
--- DROP TABLE IF EXISTS public.owned_heroes CASCADE;
--- DROP TABLE IF EXISTS public.inventory_gear CASCADE;
--- DROP TABLE IF EXISTS public.resonance_bonds CASCADE;
--- DROP TABLE IF EXISTS public.player_progress CASCADE;
--- DROP TABLE IF EXISTS public.profiles CASCADE;
-
--- 1. Player Profile (must be first)
+-- 1. Player profiles (linked to Supabase Auth)
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   player_name TEXT DEFAULT 'Echo Warden',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Owned Heroes
-CREATE TABLE IF NOT EXISTS public.owned_heroes (
-  id SERIAL PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  champion_key TEXT NOT NULL,
-  name TEXT NOT NULL,
-  faction TEXT NOT NULL,
-  rarity TEXT NOT NULL CHECK (rarity IN ('common','rare','epic','legendary')),
-  role TEXT NOT NULL CHECK (role IN ('offensive','defensive','support')),
-  level INTEGER DEFAULT 1 CHECK (level >= 1 AND level <= 80),
-  power INTEGER DEFAULT 1000,
-  hp INTEGER,
-  atk INTEGER,
-  def INTEGER,
-  spd INTEGER,
-  crit_rate NUMERIC(5,2),
-  crit_dmg NUMERIC(5,2),
-  acc INTEGER,
-  res INTEGER,
-  equipped_gear JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 3. Inventory Gear
-CREATE TABLE IF NOT EXISTS public.inventory_gear (
-  id SERIAL PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  slot TEXT NOT NULL CHECK (slot IN ('weapon','head','chest','arms','legs','boots','core1','core2')),
-  rarity TEXT NOT NULL,
-  main_stat JSONB NOT NULL,
-  sub_stats JSONB[] DEFAULT '{}',
-  set_bonus TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 4. Active Resonance Bonds
-CREATE TABLE IF NOT EXISTS public.resonance_bonds (
-  id SERIAL PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  factions TEXT[],
-  effect TEXT NOT NULL,
-  power INTEGER DEFAULT 0 CHECK (power BETWEEN 0 AND 100),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 5. Player Progress
-CREATE TABLE IF NOT EXISTS public.player_progress (
+-- 2. Cloud save – entire game state as JSONB
+--    This is the canonical source of truth for all game data.
+--    The client Zustand store hydrates from this on login.
+CREATE TABLE IF NOT EXISTS public.save_data (
   user_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
-  aether_shards INTEGER DEFAULT 8500,
-  daily_streak INTEGER DEFAULT 0,
-  last_daily_reward TIMESTAMPTZ,
-  total_pulls INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  game_state JSONB NOT NULL DEFAULT '{}'::jsonb,
+  version INTEGER NOT NULL DEFAULT 1,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS Policies
+-- 3. Real-money purchase ledger
+--    Every IAP receipt is validated server-side and recorded here.
+--    The client NEVER writes to this table directly — only via Edge Function.
+CREATE TABLE IF NOT EXISTS public.purchases (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  product_id TEXT NOT NULL,           -- e.g. 'com.aetherveil.gems_500'
+  platform TEXT NOT NULL CHECK (platform IN ('ios', 'android', 'web')),
+  receipt_id TEXT,                     -- store receipt / transaction ID
+  amount_cents INTEGER NOT NULL,      -- price in cents (e.g. 499 = $4.99)
+  currency TEXT NOT NULL DEFAULT 'USD',
+  shards_granted INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'refunded', 'failed')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  verified_at TIMESTAMPTZ
+);
+
+-- =============================================
+-- Row Level Security
+-- =============================================
+
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.owned_heroes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.inventory_gear ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.resonance_bonds ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.player_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.save_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.purchases ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can only see their own data" ON public.profiles USING (auth.uid() = id);
-CREATE POLICY "Users can only manage their own heroes" ON public.owned_heroes USING (auth.uid() = user_id);
-CREATE POLICY "Users can only manage their own gear" ON public.inventory_gear USING (auth.uid() = user_id);
-CREATE POLICY "Users can only manage their own bonds" ON public.resonance_bonds USING (auth.uid() = user_id);
-CREATE POLICY "Users can only manage their own progress" ON public.player_progress USING (auth.uid() = user_id);
+-- Profiles: users can read/update only their own row
+CREATE POLICY "Users read own profile" ON public.profiles
+  FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users update own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users insert own profile" ON public.profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Save data: users can read/upsert only their own save
+CREATE POLICY "Users read own save" ON public.save_data
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users upsert own save" ON public.save_data
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own save" ON public.save_data
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Purchases: users can only READ their own purchases
+-- (inserts/updates are done server-side via service_role key in Edge Functions)
+CREATE POLICY "Users read own purchases" ON public.purchases
+  FOR SELECT USING (auth.uid() = user_id);
 
 -- =============================================
--- SEED DATA (now in correct order)
--- =============================================
-
--- 1. Create dummy profile
-INSERT INTO public.profiles (id, player_name)
-VALUES ('00000000-0000-0000-0000-000000000000', 'Echo Warden')
-ON CONFLICT (id) DO NOTHING;
-
--- 2. Create player progress
-INSERT INTO public.player_progress (user_id, aether_shards, daily_streak)
-VALUES ('00000000-0000-0000-0000-000000000000', 8500, 0)
-ON CONFLICT (user_id) DO NOTHING;
-
--- 3. Seed the 20 champions (now safe)
-INSERT INTO public.owned_heroes 
-  (user_id, champion_key, name, faction, rarity, role, level, power, hp, atk, def, spd, crit_rate, crit_dmg, acc, res)
-VALUES 
-  -- COMMON (5)
-  ('00000000-0000-0000-0000-000000000000', 'solara_flameblade', 'Solara Flameblade', 'Solar Dominion', 'common', 'offensive', 1, 980, 880, 105, 58, 103, 15, 150, 85, 85),
-  ('00000000-0000-0000-0000-000000000000', 'lunar_shadowstep', 'Lunar Shadowstep', 'Lunar Veil', 'common', 'offensive', 1, 970, 880, 102, 58, 105, 15, 150, 85, 85),
-  ('00000000-0000-0000-0000-000000000000', 'forge_ironwall', 'Forge Ironwall', 'Stellar Forge', 'common', 'defensive', 1, 950, 1080, 88, 78, 95, 15, 150, 85, 85),
-  ('00000000-0000-0000-0000-000000000000', 'verdant_thornshield', 'Verdant Thornshield', 'Verdant Crown', 'common', 'defensive', 1, 960, 1080, 85, 80, 94, 15, 150, 85, 85),
-  ('00000000-0000-0000-0000-000000000000', 'arcane_sparkhealer', 'Arcane Sparkhealer', 'Arcane Nexus', 'common', 'support', 1, 930, 1050, 88, 58, 98, 15, 150, 95, 95),
-  
-  -- RARE (5)
-  ('00000000-0000-0000-0000-000000000000', 'thunderbolt_ravager', 'Thunderbolt Ravager', 'Thunder Pantheon', 'rare', 'offensive', 1, 1250, 1080, 125, 72, 112, 18, 160, 95, 95),
-  ('00000000-0000-0000-0000-000000000000', 'crimson_bloodreaver', 'Crimson Bloodreaver', 'Crimson Abyss', 'rare', 'offensive', 1, 1280, 1080, 130, 70, 110, 18, 160, 95, 95),
-  ('00000000-0000-0000-0000-000000000000', 'voidshade_sentinel', 'Voidshade Sentinel', 'Void Whisper', 'rare', 'defensive', 1, 1180, 1350, 108, 92, 104, 18, 160, 95, 95),
-  ('00000000-0000-0000-0000-000000000000', 'solar_aegis_knight', 'Solar Aegis Knight', 'Solar Dominion', 'rare', 'defensive', 1, 1190, 1350, 105, 95, 102, 18, 160, 95, 95),
-  ('00000000-0000-0000-0000-000000000000', 'verdant_lifeweaver', 'Verdant Lifeweaver', 'Verdant Crown', 'rare', 'support', 1, 1150, 1300, 108, 72, 108, 18, 160, 105, 115),
-
-  -- EPIC (5)
-  ('00000000-0000-0000-0000-000000000000', 'ignis_inferno_sovereign', 'Ignis Inferno Sovereign', 'Stellar Forge', 'epic', 'offensive', 1, 1680, 1350, 155, 88, 118, 22, 172, 105, 105),
-  ('00000000-0000-0000-0000-000000000000', 'lunara_eclipse_dancer', 'Lunara Eclipse Dancer', 'Lunar Veil', 'epic', 'offensive', 1, 1720, 1350, 160, 85, 120, 22, 172, 105, 105),
-  ('00000000-0000-0000-0000-000000000000', 'arcane_runelord', 'Arcane Runelord', 'Arcane Nexus', 'epic', 'defensive', 1, 1580, 1680, 135, 108, 110, 22, 172, 105, 115),
-  ('00000000-0000-0000-0000-000000000000', 'crimson_lifeblood_matron', 'Crimson Lifeblood Matron', 'Crimson Abyss', 'epic', 'support', 1, 1550, 1620, 135, 88, 115, 22, 172, 115, 125),
-  ('00000000-0000-0000-0000-000000000000', 'thunder_pantheon_herald', 'Thunder Pantheon Herald', 'Thunder Pantheon', 'epic', 'support', 1, 1600, 1650, 130, 88, 118, 22, 172, 115, 125),
-
-  -- LEGENDARY (5)
-  ('00000000-0000-0000-0000-000000000000', 'solara_dawnbreaker', 'Solara Dawnbreaker', 'Solar Dominion', 'legendary', 'offensive', 1, 2450, 1650, 195, 105, 128, 26, 185, 115, 115),
-  ('00000000-0000-0000-0000-000000000000', 'voidara_eternal_warden', 'Voidara Eternal Warden', 'Void Whisper', 'legendary', 'defensive', 1, 2380, 1980, 165, 125, 118, 26, 185, 115, 125),
-  ('00000000-0000-0000-0000-000000000000', 'verdara_worldbloom', 'Verdara Worldbloom', 'Verdant Crown', 'legendary', 'support', 1, 2320, 1950, 165, 105, 120, 26, 185, 125, 135),
-  ('00000000-0000-0000-0000-000000000000', 'ignis_eternal_flame', 'Ignis Eternal Flame', 'Stellar Forge', 'legendary', 'offensive', 1, 2480, 1650, 200, 105, 130, 26, 185, 115, 115),
-  ('00000000-0000-0000-0000-000000000000', 'arcana_starweaver', 'Arcana Starweaver', 'Arcane Nexus', 'legendary', 'support', 1, 2350, 1920, 165, 105, 125, 26, 185, 125, 135)
-ON CONFLICT DO NOTHING;
-
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_owned_heroes_user_id ON public.owned_heroes(user_id);
-CREATE INDEX IF NOT EXISTS idx_inventory_gear_user_id ON public.inventory_gear(user_id);
+-- =============================================
+CREATE INDEX IF NOT EXISTS idx_purchases_user_id ON public.purchases(user_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_status ON public.purchases(status);
 
-SELECT '✅ Schema + 20 champions seeded successfully!' AS result;
+-- =============================================
+-- Auto-create profile + save_data on signup
+-- =============================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, player_name)
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'full_name', 'Echo Warden'));
+
+  INSERT INTO public.save_data (user_id, game_state, version)
+  VALUES (NEW.id, '{}'::jsonb, 1);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- =============================================
+-- Helper: update updated_at timestamp
+-- =============================================
+CREATE OR REPLACE FUNCTION public.update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_profiles_timestamp ON public.profiles;
+CREATE TRIGGER update_profiles_timestamp
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.update_timestamp();
+
+DROP TRIGGER IF EXISTS update_save_data_timestamp ON public.save_data;
+CREATE TRIGGER update_save_data_timestamp
+  BEFORE UPDATE ON public.save_data
+  FOR EACH ROW EXECUTE FUNCTION public.update_timestamp();
+
+SELECT '✅ Schema v2.0 ready – auth, cloud save, purchases' AS result;

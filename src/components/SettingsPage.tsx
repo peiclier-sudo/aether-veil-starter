@@ -1,14 +1,80 @@
 import { useState } from 'react'
 import { useGameStore, getPlayerLevel } from '@/lib/store'
 import { useNotifications } from '@/lib/notifications'
+import { useAuth } from '@/lib/auth'
+import { saveToCloud, loadFromCloud } from '@/lib/cloud-save'
 
 export default function SettingsPage({ onBack }: { onBack: () => void }) {
   const { playerName, setPlayerName, playerXp, heroes, totalBattlesWon, totalSummons, arenaWins, dungeonClears } = useGameStore()
   const { addToast } = useNotifications()
+  const { user, configured, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut } = useAuth()
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(playerName)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [authLoading, setAuthLoading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const { level } = getPlayerLevel(playerXp)
+
+  const handleAuth = async () => {
+    if (!email || !password) { setAuthError('Email and password required'); return }
+    setAuthLoading(true)
+    setAuthError(null)
+    const fn = authMode === 'login' ? signInWithEmail : signUpWithEmail
+    const { error } = await fn(email, password)
+    setAuthLoading(false)
+    if (error) { setAuthError(error); return }
+    setEmail('')
+    setPassword('')
+    addToast({
+      type: 'info',
+      title: authMode === 'login' ? 'Signed In!' : 'Account Created!',
+      message: authMode === 'login' ? 'Cloud save will sync automatically' : 'Check your email to confirm',
+      icon: '🔐',
+    })
+  }
+
+  const handleGoogleSignIn = async () => {
+    setAuthLoading(true)
+    setAuthError(null)
+    const { error } = await signInWithGoogle()
+    setAuthLoading(false)
+    if (error) setAuthError(error)
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    addToast({ type: 'info', title: 'Signed Out', message: 'Local progress is still saved', icon: '👋' })
+  }
+
+  const handleCloudSave = async () => {
+    if (!user) return
+    setSyncing(true)
+    const { error } = await saveToCloud(user.id)
+    setSyncing(false)
+    addToast({
+      type: error ? 'error' : 'info',
+      title: error ? 'Save Failed' : 'Saved to Cloud!',
+      message: error || 'Your progress is backed up',
+      icon: error ? '❌' : '☁️',
+    })
+  }
+
+  const handleCloudLoad = async () => {
+    if (!user) return
+    setSyncing(true)
+    const { error, hasData } = await loadFromCloud(user.id)
+    setSyncing(false)
+    addToast({
+      type: error ? 'error' : 'info',
+      title: error ? 'Load Failed' : hasData ? 'Cloud Save Loaded!' : 'No Cloud Save',
+      message: error || (hasData ? 'Your progress has been restored' : 'Save your game first'),
+      icon: error ? '❌' : '☁️',
+    })
+  }
 
   const handleSaveName = () => {
     if (nameInput.trim()) {
@@ -79,6 +145,106 @@ export default function SettingsPage({ onBack }: { onBack: () => void }) {
                 {level}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Account / Auth section */}
+        <section className="space-y-3">
+          <h2 className="text-xs font-bold text-white/40 uppercase tracking-wider">Account</h2>
+          <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-4">
+            {!configured ? (
+              <p className="text-xs text-white/30">Cloud save not configured. Add Supabase env vars to enable.</p>
+            ) : user ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-white/40 uppercase tracking-wider">Signed in as</p>
+                    <p className="text-sm text-white font-medium truncate max-w-[200px]">{user.email}</p>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-white/10 text-white/60 hover:bg-white/15 active:scale-95 transition-all"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+
+                {/* Cloud save controls */}
+                <div className="flex gap-2 pt-2 border-t border-white/5">
+                  <button
+                    onClick={handleCloudSave}
+                    disabled={syncing}
+                    className="flex-1 py-2.5 text-xs font-bold rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {syncing ? 'Syncing...' : '☁️ Save to Cloud'}
+                  </button>
+                  <button
+                    onClick={handleCloudLoad}
+                    disabled={syncing}
+                    className="flex-1 py-2.5 text-xs font-bold rounded-lg bg-white/10 text-white hover:bg-white/15 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {syncing ? 'Syncing...' : '⬇️ Load from Cloud'}
+                  </button>
+                </div>
+                <p className="text-[10px] text-white/25 text-center">Auto-saves every 3 seconds while signed in</p>
+              </>
+            ) : (
+              <>
+                {/* Auth tabs */}
+                <div className="flex border-b border-white/10 -mx-4 px-4">
+                  <button
+                    onClick={() => { setAuthMode('login'); setAuthError(null) }}
+                    className={`flex-1 py-2 text-xs font-medium border-b-2 transition-all ${
+                      authMode === 'login' ? 'text-white border-yellow-400' : 'text-white/40 border-transparent'
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => { setAuthMode('signup'); setAuthError(null) }}
+                    className={`flex-1 py-2 text-xs font-medium border-b-2 transition-all ${
+                      authMode === 'signup' ? 'text-white border-yellow-400' : 'text-white/40 border-transparent'
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-yellow-400/50"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-yellow-400/50"
+                  />
+                  {authError && <p className="text-xs text-red-400">{authError}</p>}
+                  <button
+                    onClick={handleAuth}
+                    disabled={authLoading}
+                    className="w-full py-2.5 text-xs font-bold rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 text-black hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {authLoading ? 'Please wait...' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+                  </button>
+                  <button
+                    onClick={handleGoogleSignIn}
+                    disabled={authLoading}
+                    className="w-full py-2.5 text-xs font-bold rounded-lg bg-white/10 text-white hover:bg-white/15 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    Continue with Google
+                  </button>
+                </div>
+                <p className="text-[10px] text-white/25 text-center">Sign in to sync progress across devices and enable purchases</p>
+              </>
+            )}
           </div>
         </section>
 

@@ -18,6 +18,8 @@ import ToastContainer from './components/ToastContainer'
 import OnboardingOverlay from './components/OnboardingOverlay'
 import { useGameStore } from './lib/store'
 import { useNotifications } from './lib/notifications'
+import { useAuth } from './lib/auth'
+import { loadFromCloud, scheduleCloudSave, flushCloudSave } from './lib/cloud-save'
 import { BP_XP_REWARDS } from './lib/battle-pass-data'
 
 const navItems = [
@@ -35,7 +37,9 @@ function App() {
   const pendingPage = useRef<string | null>(null)
   const { tickEnergyRegen, checkDailyLogin, addBattlePassXp } = useGameStore()
   const { addToast } = useNotifications()
+  const { user } = useAuth()
   const dailyChecked = useRef(false)
+  const cloudLoaded = useRef(false)
 
   // Energy regeneration tick every 30s
   useEffect(() => {
@@ -60,6 +64,35 @@ function App() {
       })
     }
   }, [checkDailyLogin, addToast])
+
+  // Load cloud save when user logs in
+  useEffect(() => {
+    if (!user || cloudLoaded.current) return
+    cloudLoaded.current = true
+    loadFromCloud(user.id).then(({ error, hasData }) => {
+      if (hasData) {
+        addToast({ type: 'info', title: 'Cloud Save Loaded', message: 'Your progress has been synced', icon: '☁️', duration: 3000 })
+      }
+      if (error) console.warn('[CloudSave] Load error:', error)
+    })
+  }, [user, addToast])
+
+  // Auto-save to cloud on state changes (debounced)
+  useEffect(() => {
+    if (!user) return
+    const unsub = useGameStore.subscribe(() => {
+      scheduleCloudSave(user.id)
+    })
+    // Flush on tab close
+    const handleBeforeUnload = () => flushCloudSave(user.id)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => { unsub(); window.removeEventListener('beforeunload', handleBeforeUnload) }
+  }, [user])
+
+  // Reset cloud loaded flag when user changes
+  useEffect(() => {
+    if (!user) cloudLoaded.current = false
+  }, [user])
 
   const navigate = useCallback((target: string) => {
     if (target === displayedPage || transitioning) return
