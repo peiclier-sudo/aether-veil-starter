@@ -12,6 +12,11 @@ import ShopPage from './components/ShopPage'
 import InventoryPage from './components/InventoryPage'
 import AchievementsPage from './components/AchievementsPage'
 import GuildPage from './components/GuildPage'
+import BattlePassPage from './components/BattlePassPage'
+import ToastContainer from './components/ToastContainer'
+import { useGameStore } from './lib/store'
+import { useNotifications } from './lib/notifications'
+import { BP_XP_REWARDS } from './lib/battle-pass-data'
 
 const navItems = [
   { id: 'home', label: 'Home', icon: '🏠' },
@@ -26,6 +31,33 @@ function App() {
   const [transitioning, setTransitioning] = useState(false)
   const [displayedPage, setDisplayedPage] = useState('home')
   const pendingPage = useRef<string | null>(null)
+  const { tickEnergyRegen, checkDailyLogin, addBattlePassXp } = useGameStore()
+  const { addToast } = useNotifications()
+  const dailyChecked = useRef(false)
+
+  // Energy regeneration tick every 30s
+  useEffect(() => {
+    tickEnergyRegen()
+    const interval = setInterval(tickEnergyRegen, 30000)
+    return () => clearInterval(interval)
+  }, [tickEnergyRegen])
+
+  // Daily login check
+  useEffect(() => {
+    if (dailyChecked.current) return
+    dailyChecked.current = true
+    const result = checkDailyLogin()
+    if (result.isNewDay) {
+      addBattlePassXp(BP_XP_REWARDS.dailyLogin)
+      addToast({
+        type: 'reward',
+        title: `Day ${result.streak} Login Streak!`,
+        message: 'Claim your daily reward on the dashboard',
+        icon: '🔥',
+        duration: 5000,
+      })
+    }
+  }, [checkDailyLogin, addToast])
 
   const navigate = useCallback((target: string) => {
     if (target === displayedPage || transitioning) return
@@ -74,6 +106,8 @@ function App() {
         return <AchievementsPage onBack={() => navigate('home')} />
       case 'guild':
         return <GuildPage onBack={() => navigate('home')} />
+      case 'battlepass':
+        return <BattlePassPage onBack={() => navigate('home')} />
       default:
         return <Dashboard onNavigate={navigate} />
     }
@@ -81,6 +115,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0a060f] flex flex-col">
+      <ToastContainer />
       <div className="flex-1 overflow-hidden">
         <div
           className="h-full transition-all duration-150 ease-in-out"

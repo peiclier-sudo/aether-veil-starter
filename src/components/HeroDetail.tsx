@@ -5,6 +5,7 @@ import { getLevelUpCost, getMaxLevel, computeLevelUpStats } from '@/lib/leveling
 import { getGearStatBonuses } from '@/lib/gear-generator'
 import { getSkillUpgradeCost, MAX_SKILL_LEVEL, getUpgradedCooldown } from '@/lib/skill-upgrades'
 import { defaultStarsByRarity } from '@/lib/ascension'
+import { BP_XP_REWARDS } from '@/lib/battle-pass-data'
 
 const rarityBadgeColor: Record<string, string> = {
   common:    'bg-zinc-600 text-zinc-200',
@@ -84,7 +85,7 @@ function GearPickerModal({
   heroId: string
   onClose: () => void
 }) {
-  const { inventory, equipGear } = useGameStore()
+  const { inventory, equipGear, trackDailyQuest } = useGameStore()
   const matching = inventory
     .filter(g => g.slot === slot)
     .sort((a, b) => {
@@ -110,7 +111,7 @@ function GearPickerModal({
             matching.map(gear => (
               <button
                 key={gear.id}
-                onClick={() => { equipGear(heroId, gear); onClose() }}
+                onClick={() => { equipGear(heroId, gear); trackDailyQuest('gearsEquippedToday'); onClose() }}
                 className={`w-full text-left rounded-lg border p-3 transition-all hover:brightness-110 ${gearRarityColor[gear.rarity]}`}
               >
                 <div className="flex items-center justify-between mb-1">
@@ -144,7 +145,7 @@ function GearPickerModal({
 }
 
 export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero; onClose: () => void }) {
-  const { heroes, aetherShards, spendShards, levelUpHero, unequipGear, upgradeSkill } = useGameStore()
+  const { heroes, aetherShards, spendShards, levelUpHero, unequipGear, upgradeSkill, trackDailyQuest, addBattlePassXp } = useGameStore()
   const hero = heroes.find(h => h.id === initialHero.id) || initialHero
 
   const [tab, setTab] = useState<'stats' | 'gear' | 'skills'>('stats')
@@ -166,15 +167,18 @@ export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero;
     if (!spendShards(levelCost)) return
     const newStats = computeLevelUpStats(hero)
     levelUpHero(hero.id, newStats)
+    trackDailyQuest('levelUpsToday')
+    trackDailyQuest('shardsSpentToday', levelCost)
+    addBattlePassXp(BP_XP_REWARDS.heroLevelUp)
   }
 
   const gearBonuses = getGearStatBonuses(hero.equippedGear)
   const equippedCount = Object.values(hero.equippedGear).filter(Boolean).length
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]" onClick={onClose}>
       <div
-        className="bg-gradient-to-b from-[#1a1028] to-[#0a060f] border border-white/15 max-w-md w-full rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="bg-gradient-to-b from-[#1a1028] to-[#0a060f] border border-white/15 max-w-md w-full rounded-2xl overflow-hidden max-h-[90vh] flex flex-col animate-[scale-in_0.3s_ease-out]"
         onClick={e => e.stopPropagation()}
       >
         {/* Portrait header */}
@@ -375,6 +379,11 @@ export default function HeroDetail({ hero: initialHero, onClose }: { hero: Hero;
           onClose={() => setGearPickerSlot(null)}
         />
       )}
+
+      <style>{`
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scale-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+      `}</style>
     </div>
   )
 }

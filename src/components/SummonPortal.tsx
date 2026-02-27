@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useGameStore, Hero } from '@/lib/store'
 import { summonHero, summonMultiple, SUMMON_COST_SINGLE, SUMMON_COST_TEN, DROP_RATES } from '@/lib/summon-pool'
 import { generateHeroPortrait } from '@/lib/hero-portraits'
+import { BP_XP_REWARDS } from '@/lib/battle-pass-data'
 
 const rarityColor: Record<string, string> = {
   common: 'text-zinc-400 border-zinc-500',
@@ -159,7 +160,7 @@ function SummonResults({ heroes, onClose }: { heroes: Hero[]; onClose: () => voi
 }
 
 export default function SummonPortal({ onBack }: { onBack: () => void }) {
-  const { aetherShards, addHero, spendShards, incrementSummons, totalSummons } = useGameStore()
+  const { aetherShards, addHero, spendShards, incrementSummons, totalSummons, trackDailyQuest, addBattlePassXp } = useGameStore()
   const [results, setResults] = useState<Hero[] | null>(null)
   const [showRates, setShowRates] = useState(false)
   const [summoning, setSummoning] = useState(false)
@@ -172,6 +173,8 @@ export default function SummonPortal({ onBack }: { onBack: () => void }) {
       const hero = summonHero()
       addHero(hero)
       incrementSummons(1)
+      trackDailyQuest('summonsToday')
+      addBattlePassXp(BP_XP_REWARDS.summon)
       setResults([hero])
       setSummoning(false)
     }, 600)
@@ -184,6 +187,8 @@ export default function SummonPortal({ onBack }: { onBack: () => void }) {
       const heroes = summonMultiple(10)
       heroes.forEach(h => addHero(h))
       incrementSummons(10)
+      trackDailyQuest('summonsToday', 10)
+      addBattlePassXp(BP_XP_REWARDS.summon * 10)
       setResults(heroes)
       setSummoning(false)
     }, 800)

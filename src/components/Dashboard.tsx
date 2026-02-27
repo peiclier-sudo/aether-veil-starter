@@ -1,7 +1,10 @@
-import { useGameStore } from '@/lib/store'
+import { useGameStore, MAX_ENERGY } from '@/lib/store'
 import { generateHeroPortrait } from '@/lib/hero-portraits'
+import { useNotifications } from '@/lib/notifications'
+import { getDailyQuests, DailyQuest } from '@/lib/daily-quests'
+import { getCurrentBPLevel } from '@/lib/battle-pass-data'
 import HeroCard from './HeroCard'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 function PlayerTopBar() {
   const { playerName, level, aetherShards, energy } = useGameStore()
@@ -25,12 +28,64 @@ function PlayerTopBar() {
         <div className="flex items-center gap-1.5 group">
           <span className="text-green-400 text-sm group-hover:animate-pulse">⚡</span>
           <span className="text-sm font-mono text-white">{energy}</span>
-          <span className="text-[10px] text-white/40">/120</span>
+          <span className="text-[10px] text-white/40">/{MAX_ENERGY}</span>
         </div>
         <div className="flex items-center gap-1.5 group">
           <span className="text-purple-400 text-sm group-hover:animate-pulse">💎</span>
           <span className="text-sm font-mono text-white">{aetherShards.toLocaleString()}</span>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function DailyLoginBanner() {
+  const { loginStreak, dailyRewardClaimed, claimDailyReward } = useGameStore()
+  const { addToast } = useNotifications()
+  const [claimed, setClaimed] = useState(false)
+
+  if (dailyRewardClaimed || claimed) return null
+
+  const handleClaim = () => {
+    const reward = claimDailyReward()
+    if (reward > 0) {
+      setClaimed(true)
+      addToast({ type: 'reward', title: `Day ${loginStreak} Reward!`, message: `+${reward} shards`, icon: '🔥' })
+    }
+  }
+
+  const streakBonus = Math.min(loginStreak, 7) * 25
+  const totalReward = 100 + streakBonus
+
+  return (
+    <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-r from-orange-500/15 to-yellow-500/10 p-4 animate-[fade-up_0.5s_ease-out] overflow-hidden relative">
+      <div className="absolute -right-4 -top-4 text-6xl opacity-10">🔥</div>
+      <div className="relative z-10 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">🔥</span>
+            <h3 className="text-sm font-bold text-orange-300">Day {loginStreak} Login Streak!</h3>
+          </div>
+          <p className="text-[10px] text-white/40">Claim your daily reward: 💎 {totalReward} shards</p>
+          <div className="flex gap-1 mt-2">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-5 h-5 rounded text-[9px] flex items-center justify-center font-bold ${
+                  i < loginStreak ? 'bg-orange-500/30 text-orange-300' : 'bg-white/5 text-white/20'
+                }`}
+              >
+                {i + 1}
+              </div>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={handleClaim}
+          className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-yellow-500 text-black font-bold text-sm rounded-xl hover:brightness-110 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-orange-500/30"
+        >
+          Claim!
+        </button>
       </div>
     </div>
   )
@@ -148,6 +203,155 @@ function QuickActions({ onNavigate }: { onNavigate: (page: string) => void }) {
   )
 }
 
+function DailyQuestsCard() {
+  const { dailyQuestProgress, claimDailyQuestReward, addShards, addEnergy, addBattlePassXp } = useGameStore()
+  const { addToast } = useNotifications()
+  const today = new Date().toISOString().slice(0, 10)
+  const quests = useMemo(() => getDailyQuests(today), [today])
+
+  const handleClaim = (quest: DailyQuest) => {
+    const success = claimDailyQuestReward(quest.id)
+    if (success) {
+      addShards(quest.reward.shards)
+      if (quest.reward.energy) addEnergy(quest.reward.energy)
+      addBattlePassXp(quest.reward.bpXp)
+      addToast({ type: 'reward', title: quest.name, message: `+${quest.reward.shards} shards +${quest.reward.bpXp} BP XP`, icon: quest.icon })
+    }
+  }
+
+  return (
+    <div
+      className="rounded-xl bg-white/5 border border-white/10 p-4 hover:bg-white/[0.07] transition-colors animate-[fade-up_0.4s_ease-out]"
+      style={{ animationDelay: '1s', animationFillMode: 'backwards' }}
+    >
+      <h4 className="text-sm font-bold text-white/80 mb-3 uppercase tracking-wider">Daily Quests</h4>
+      <div className="space-y-2.5">
+        {quests.map(q => {
+          const progress = dailyQuestProgress.date === today ? (dailyQuestProgress.progress[q.trackingKey] || 0) : 0
+          const done = progress >= q.target
+          const claimed = dailyQuestProgress.claimed.includes(q.id)
+          const pct = Math.min(100, (progress / q.target) * 100)
+
+          return (
+            <div key={q.id} className="flex items-center gap-3 group">
+              <span className="text-lg w-6 text-center">{q.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className={`text-xs truncate ${claimed ? 'text-white/30 line-through' : 'text-white/70'}`}>{q.description}</p>
+                  <span className="text-[10px] font-mono text-white/30 ml-2 shrink-0">{Math.min(progress, q.target)}/{q.target}</span>
+                </div>
+                <div className="w-full h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${claimed ? 'bg-white/20' : 'bg-gradient-to-r from-green-400 to-emerald-500'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+              <div className="shrink-0">
+                {claimed ? (
+                  <span className="text-green-400 text-xs">✓</span>
+                ) : done ? (
+                  <button
+                    onClick={() => handleClaim(q)}
+                    className="px-3 py-1 text-[10px] font-bold rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 text-black hover:brightness-110 hover:scale-105 active:scale-95 transition-all"
+                  >
+                    Claim
+                  </button>
+                ) : (
+                  <span className="text-[10px] text-yellow-400/70">💎{q.reward.shards}</span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function BattlePassPreview({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const { battlePass } = useGameStore()
+  const { level } = getCurrentBPLevel(battlePass.xp)
+
+  return (
+    <button
+      onClick={() => onNavigate('battlepass')}
+      className="rounded-xl bg-gradient-to-r from-purple-500/15 to-pink-500/10 border border-purple-500/20 p-4 text-left hover:brightness-110 transition-all group animate-[fade-up_0.4s_ease-out]"
+      style={{ animationDelay: '1.1s', animationFillMode: 'backwards' }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-sm font-bold text-purple-200 uppercase tracking-wider">Battle Pass</h4>
+        {battlePass.isPremium && <span className="text-[9px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">PREMIUM</span>}
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-2xl">👑</div>
+        <div>
+          <p className="text-lg font-mono font-bold text-white">Level {level}</p>
+          <p className="text-[10px] text-white/40">Season 1: Dawn of Echoes</p>
+        </div>
+      </div>
+      <p className="text-[10px] text-purple-300/60 mt-2 group-hover:text-purple-300/80 transition">Tap to view rewards →</p>
+    </button>
+  )
+}
+
+function StarterPackCard() {
+  const { starterPackPurchased, aetherShards, purchaseStarterPack } = useGameStore()
+  const { addToast } = useNotifications()
+
+  const handlePurchase = () => {
+    if (purchaseStarterPack()) {
+      addToast({ type: 'reward', title: 'Starter Pack Purchased!', message: '+3000 shards, full energy, 5 heroes', icon: '🎁', duration: 5000 })
+    }
+  }
+
+  if (starterPackPurchased) {
+    return (
+      <div
+        className="rounded-xl bg-gradient-to-r from-yellow-500/10 to-amber-500/5 border border-yellow-500/20 p-4 animate-[fade-up_0.4s_ease-out] opacity-50"
+        style={{ animationDelay: '1.2s', animationFillMode: 'backwards' }}
+      >
+        <h4 className="text-sm font-bold text-yellow-300/60 uppercase tracking-wider mb-2">Starter Pack</h4>
+        <p className="text-xs text-white/30">Already claimed! ✓</p>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="rounded-xl bg-gradient-to-r from-yellow-500/15 to-orange-500/10 border border-yellow-500/30 p-4 animate-[fade-up_0.4s_ease-out] overflow-hidden relative"
+      style={{ animationDelay: '1.2s', animationFillMode: 'backwards' }}
+    >
+      <div className="absolute -right-4 -top-4 text-6xl opacity-10">🎁</div>
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[9px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 font-bold animate-pulse">LIMITED</span>
+          <h4 className="text-sm font-bold text-yellow-300 uppercase tracking-wider">Starter Pack</h4>
+        </div>
+        <p className="text-[10px] text-white/50 mb-3">3000 shards + full energy + 5 heroes</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-white/30 line-through text-xs">💎 2000</span>
+            <span className="text-yellow-400 font-bold text-sm ml-2">💎 500</span>
+            <span className="text-[9px] text-green-400 ml-1">75% OFF</span>
+          </div>
+          <button
+            onClick={handlePurchase}
+            disabled={aetherShards < 500}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+              aetherShards >= 500
+                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:brightness-110 hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/20'
+                : 'bg-white/5 text-white/20 cursor-not-allowed'
+            }`}
+          >
+            Buy Now!
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard({ onNavigate }: { onNavigate: (page: string) => void }) {
   const { heroes } = useGameStore()
   const legendaries = heroes.filter(h => h.rarity === 'legendary')
@@ -160,6 +364,9 @@ export default function Dashboard({ onNavigate }: { onNavigate: (page: string) =
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+          {/* Daily login banner */}
+          <DailyLoginBanner />
+
           {/* Featured hero showcase */}
           {featured && (
             <FeaturedHero hero={featured} onViewRoster={() => onNavigate('roster')} />
@@ -192,57 +399,13 @@ export default function Dashboard({ onNavigate }: { onNavigate: (page: string) =
             </div>
           </div>
 
-          {/* Daily quests / events */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div
-              className="rounded-xl bg-white/5 border border-white/10 p-4 hover:bg-white/[0.07] transition-colors animate-[fade-up_0.4s_ease-out]"
-              style={{ animationDelay: '1s', animationFillMode: 'backwards' }}
-            >
-              <h4 className="text-sm font-bold text-white/80 mb-3 uppercase tracking-wider">Daily Quests</h4>
-              <div className="space-y-2">
-                {[
-                  { quest: 'Win 3 Arena battles', progress: 1, total: 3, reward: '50 💎' },
-                  { quest: 'Complete Campaign 5-3', progress: 0, total: 1, reward: '100 ⚡' },
-                  { quest: 'Level up a champion', progress: 1, total: 1, reward: '200 💎' },
-                ].map(q => (
-                  <div key={q.quest} className="flex items-center justify-between group">
-                    <div className="flex-1">
-                      <p className="text-xs text-white/70">{q.quest}</p>
-                      <div className="w-full h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all"
-                          style={{ width: `${(q.progress / q.total) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span className={`text-[10px] ml-3 whitespace-nowrap transition-colors ${
-                      q.progress >= q.total ? 'text-green-400 font-bold' : 'text-yellow-400'
-                    }`}>
-                      {q.progress >= q.total ? 'Claim!' : q.reward}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Daily quests + Battle Pass + Starter Pack */}
+          <DailyQuestsCard />
 
-            <div
-              className="rounded-xl bg-white/5 border border-white/10 p-4 hover:bg-white/[0.07] transition-colors animate-[fade-up_0.4s_ease-out]"
-              style={{ animationDelay: '1.1s', animationFillMode: 'backwards' }}
-            >
-              <h4 className="text-sm font-bold text-white/80 mb-3 uppercase tracking-wider">Events</h4>
-              <div className="space-y-3">
-                <div className="rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 p-3 hover:from-purple-500/25 hover:to-pink-500/25 transition-all cursor-pointer group">
-                  <p className="text-xs font-bold text-purple-200 group-hover:text-purple-100 transition-colors">Void Rift Invasion</p>
-                  <p className="text-[10px] text-white/50 mt-0.5">Double rewards for 48h</p>
-                  <p className="text-[10px] text-yellow-400 mt-1 font-mono">23:45:12 remaining</p>
-                </div>
-                <div className="rounded-lg bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-400/30 p-3 hover:from-yellow-500/25 hover:to-amber-500/25 transition-all cursor-pointer group">
-                  <p className="text-xs font-bold text-yellow-200 group-hover:text-yellow-100 transition-colors">Legendary Summon Festival</p>
-                  <p className="text-[10px] text-white/50 mt-0.5">2x legendary drop rate</p>
-                  <p className="text-[10px] text-yellow-400 mt-1 font-mono">3d 12:00:00 remaining</p>
-                </div>
-              </div>
-            </div>
+          {/* Battle Pass preview + Starter Pack */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <BattlePassPreview onNavigate={onNavigate} />
+            <StarterPackCard />
           </div>
         </div>
       </div>
