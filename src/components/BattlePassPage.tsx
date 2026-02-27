@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '@/lib/store'
 import {
   BATTLE_PASS_TIERS, SEASON_NAME, SEASON_END_DATE,
@@ -195,11 +195,79 @@ export default function BattlePassPage({ onBack }: { onBack: () => void }) {
         </div>
       </div>
 
-      {/* Tier list (horizontal scroll) */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto px-4 py-4">
-        <div className="flex gap-3" style={{ minWidth: `${BATTLE_PASS_TIERS.length * 110}px` }}>
-          {BATTLE_PASS_TIERS.map((tier, i) => {
+      {/* Tier list (horizontal scroll with snap) */}
+      <TierList
+        tiers={BATTLE_PASS_TIERS}
+        currentLevel={currentLevel}
+        battlePass={battlePass}
+        onClaim={handleClaim}
+      />
+
+      <style>{`
+        @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slide-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 50%,100% { transform: translateX(100%); } }
+      `}</style>
+    </div>
+  )
+}
+
+function TierList({
+  tiers,
+  currentLevel,
+  battlePass,
+  onClaim,
+}: {
+  tiers: typeof BATTLE_PASS_TIERS
+  currentLevel: number
+  battlePass: { isPremium: boolean; claimedFree: number[]; claimedPremium: number[] }
+  onClaim: (level: number, track: 'free' | 'premium') => void
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [showLeftFade, setShowLeftFade] = useState(false)
+  const [showRightFade, setShowRightFade] = useState(true)
+
+  // Auto-scroll to current level on mount
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const tierIndex = Math.max(0, Math.min(currentLevel - 1, tiers.length - 1))
+    const targetScroll = tierIndex * 113 - el.clientWidth / 2 + 55
+    el.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' })
+  }, [currentLevel, tiers.length])
+
+  const handleScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    setShowLeftFade(el.scrollLeft > 20)
+    setShowRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 20)
+  }
+
+  return (
+    <div className="flex-1 relative">
+      {/* Scroll fade indicators */}
+      {showLeftFade && (
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#0a060f] to-transparent z-10 pointer-events-none" />
+      )}
+      {showRightFade && (
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#0a060f] to-transparent z-10 pointer-events-none" />
+      )}
+
+      {/* Swipe hint */}
+      <div className="text-center py-1">
+        <span className="text-[9px] text-white/20">← swipe to browse tiers →</span>
+      </div>
+
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="overflow-x-auto overflow-y-auto px-4 pb-4 snap-x snap-mandatory"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+      >
+        <div className="flex gap-3" style={{ minWidth: `${tiers.length * 113}px` }}>
+          {tiers.map((tier, i) => {
             const reached = currentLevel >= tier.level
+            const isCurrent = currentLevel === tier.level
             const freeClaimed = battlePass.claimedFree.includes(tier.level)
             const premClaimed = battlePass.claimedPremium.includes(tier.level)
             const freeCanClaim = reached && !freeClaimed
@@ -208,14 +276,25 @@ export default function BattlePassPage({ onBack }: { onBack: () => void }) {
             return (
               <div
                 key={tier.level}
-                className={`flex flex-col gap-2 animate-[fade-up_0.3s_ease-out] ${
+                className={`flex flex-col gap-2 snap-center animate-[fade-up_0.3s_ease-out] ${
                   reached ? '' : 'opacity-50'
-                }`}
+                } ${isCurrent ? 'relative' : ''}`}
                 style={{ animationDelay: `${0.1 + i * 0.04}s`, animationFillMode: 'backwards' }}
               >
+                {/* Current level marker */}
+                {isCurrent && (
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[8px] text-yellow-400 font-bold uppercase tracking-widest whitespace-nowrap">
+                    You
+                  </div>
+                )}
+
                 {/* Level indicator */}
                 <div className={`text-center text-xs font-mono font-bold py-1 rounded-lg ${
-                  reached ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-white/30'
+                  isCurrent
+                    ? 'bg-yellow-500/30 text-yellow-300 ring-1 ring-yellow-400/40'
+                    : reached
+                    ? 'bg-purple-500/20 text-purple-300'
+                    : 'bg-white/5 text-white/30'
                 }`}>
                   Lv.{tier.level}
                 </div>
@@ -227,7 +306,7 @@ export default function BattlePassPage({ onBack }: { onBack: () => void }) {
                   canClaim={freeCanClaim}
                   isPremium={false}
                   locked={false}
-                  onClaim={() => handleClaim(tier.level, 'free')}
+                  onClaim={() => onClaim(tier.level, 'free')}
                 />
 
                 {/* Premium reward */}
@@ -237,19 +316,13 @@ export default function BattlePassPage({ onBack }: { onBack: () => void }) {
                   canClaim={premCanClaim}
                   isPremium={true}
                   locked={!battlePass.isPremium}
-                  onClaim={() => handleClaim(tier.level, 'premium')}
+                  onClaim={() => onClaim(tier.level, 'premium')}
                 />
               </div>
             )
           })}
         </div>
       </div>
-
-      <style>{`
-        @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slide-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes shimmer { 0% { transform: translateX(-100%); } 50%,100% { transform: translateX(100%); } }
-      `}</style>
     </div>
   )
 }
