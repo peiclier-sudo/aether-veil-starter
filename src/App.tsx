@@ -13,6 +13,7 @@ import InventoryPage from './components/InventoryPage'
 import AchievementsPage from './components/AchievementsPage'
 import GuildPage from './components/GuildPage'
 import BattlePassPage from './components/BattlePassPage'
+import SettingsPage from './components/SettingsPage'
 import ToastContainer from './components/ToastContainer'
 import OnboardingOverlay from './components/OnboardingOverlay'
 import { useGameStore } from './lib/store'
@@ -109,6 +110,8 @@ function App() {
         return <GuildPage onBack={() => navigate('home')} />
       case 'battlepass':
         return <BattlePassPage onBack={() => navigate('home')} />
+      case 'settings':
+        return <SettingsPage onBack={() => navigate('home')} />
       default:
         return <Dashboard onNavigate={navigate} />
     }
@@ -131,7 +134,7 @@ function App() {
       </div>
 
       {/* Bottom navigation */}
-      <nav className="flex items-center justify-around bg-black/80 backdrop-blur-md border-t border-white/10 py-1 px-2 sticky bottom-0 z-40">
+      <nav className="flex items-center justify-around bg-black/80 backdrop-blur-md border-t border-white/10 py-1 px-2 sticky bottom-0 z-40" style={{ paddingBottom: 'max(4px, env(safe-area-inset-bottom))' }}>
         {navItems.map(item => (
           <button
             key={item.id}

@@ -10,8 +10,6 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@babylonjs/core": "8.0.0",
-    "@supabase/supabase-js": "^2.53.0",
     "@tanstack/react-query": "^5.66.0",
     "babylonjs": "8.0.0",
     "babylonjs-gui": "8.0.0",

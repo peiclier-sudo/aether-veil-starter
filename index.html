@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0f0d14" />
     <meta name="description" content="Aether Veil: Luminara Echoes - luminous gacha RPG" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -10,10 +10,32 @@
     <meta name="apple-mobile-web-app-title" content="Luminara" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Aether Veil: Luminara Echoes" />
+    <meta property="og:description" content="Summon heroes, conquer campaigns, and unravel the mysteries of the Aether Veil in this luminous gacha RPG." />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Aether Veil: Luminara Echoes" />
+    <meta name="twitter:description" content="Summon heroes, conquer campaigns, and unravel the mysteries of the Aether Veil." />
+    <meta name="twitter:image" content="/icon-512.png" />
     <title>Aether Veil: Luminara Echoes</title>
   </head>
   <body class="bg-[#0f0d14] text-zinc-100">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Inline splash screen — removed once React mounts -->
+      <div id="splash" style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:24px">
+        <img src="/favicon.svg" alt="" width="72" height="72" style="border-radius:16px;animation:splash-pulse 1.5s ease-in-out infinite" />
+        <div style="color:rgba(255,255,255,0.6);font-size:14px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase">Loading</div>
+        <div style="width:120px;height:3px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden">
+          <div style="width:40%;height:100%;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:4px;animation:splash-bar 1.2s ease-in-out infinite"></div>
+        </div>
+      </div>
+      <style>
+        @keyframes splash-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+        @keyframes splash-bar{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+      </style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

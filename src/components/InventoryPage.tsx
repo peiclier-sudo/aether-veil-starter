@@ -28,6 +28,7 @@ export default function InventoryPage({ onBack }: { onBack: () => void }) {
   const [sortBy, setSortBy] = useState<SortKey>('rarity')
   const [filterSlot, setFilterSlot] = useState<FilterSlot>('all')
   const [filterRarity, setFilterRarity] = useState<FilterRarity>('all')
+  const [showSellConfirm, setShowSellConfirm] = useState(false)
 
   const filtered = useMemo(() => {
     let items = [...inventory]
@@ -63,9 +64,14 @@ export default function InventoryPage({ onBack }: { onBack: () => void }) {
 
   const handleSell = () => {
     if (selectedIds.size === 0) return
+    setShowSellConfirm(true)
+  }
+
+  const confirmSell = () => {
     const count = selectedIds.size
     const value = sellGear(Array.from(selectedIds))
     setSelectedIds(new Set())
+    setShowSellConfirm(false)
     addToast({ type: 'reward', title: `Sold ${count} Gear`, message: `+${value} shards`, icon: '💎' })
   }
 
@@ -172,6 +178,33 @@ export default function InventoryPage({ onBack }: { onBack: () => void }) {
           })
         )}
       </div>
+
+      {/* Sell confirmation modal */}
+      {showSellConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-[#1a1028] rounded-2xl border border-white/10 p-6 max-w-xs w-full text-center space-y-4 shadow-2xl">
+            <div className="text-4xl">🗑️</div>
+            <h3 className="text-lg font-bold text-white">Sell {selectedIds.size} gear?</h3>
+            <p className="text-sm text-white/50">
+              You will receive <span className="text-yellow-400 font-bold">💎 {totalSellValue}</span> shards. This cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowSellConfirm(false)}
+                className="px-5 py-2.5 bg-white/10 text-white/70 font-medium text-sm rounded-xl hover:bg-white/20 active:scale-95 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSell}
+                className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-red-500/20"
+              >
+                Sell
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }

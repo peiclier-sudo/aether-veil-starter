@@ -150,6 +150,7 @@ export interface PlayerState {
   claimDailyQuestReward: (questId: string, reward?: { shards: number; energy?: number; bpXp: number }) => boolean
   addPlayerXp: (xp: number) => void
   completeOnboarding: () => void
+  setPlayerName: (name: string) => void
   purchaseStarterPack: () => boolean
 }
 
@@ -363,6 +364,7 @@ export const useGameStore = create<PlayerState>()(
         else if (item.rewardType === 'gear') get().addToInventory(generateGear(item.rewardValue))
         else if (item.rewardType === 'hero') get().addHero(summonHero())
         if (item.category === 'daily') set((s) => ({ shopPurchasesToday: [...s.shopPurchasesToday, item.id] }))
+        get().trackDailyQuest('shardsSpentToday', item.cost)
         return true
       },
       refreshDailyShop: () => {
@@ -504,6 +506,7 @@ export const useGameStore = create<PlayerState>()(
         return true
       },
       completeOnboarding: () => set({ onboardingComplete: true }),
+      setPlayerName: (name) => set({ playerName: name.trim().slice(0, 20) || 'Echo Warden' }),
       addPlayerXp: (xp) => set((state) => {
         const newXp = state.playerXp + xp
         return { playerXp: newXp, level: getPlayerLevel(newXp).level }

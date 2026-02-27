@@ -6,7 +6,7 @@ import { getCurrentBPLevel } from '@/lib/battle-pass-data'
 import HeroCard from './HeroCard'
 import { useMemo, useState } from 'react'
 
-function PlayerTopBar() {
+function PlayerTopBar({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const { playerName, level, playerXp, aetherShards, energy } = useGameStore()
   const { progress } = getPlayerLevel(playerXp)
   return (
@@ -24,7 +24,7 @@ function PlayerTopBar() {
         </div>
       </div>
 
-      {/* Resources */}
+      {/* Resources + Settings */}
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-1.5 group">
           <span className="text-green-400 text-sm group-hover:animate-pulse">⚡</span>
@@ -35,6 +35,15 @@ function PlayerTopBar() {
           <span className="text-purple-400 text-sm group-hover:animate-pulse">💎</span>
           <span className="text-sm font-mono text-white">{aetherShards.toLocaleString()}</span>
         </div>
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('settings')}
+            className="text-white/30 hover:text-white/60 transition-colors text-lg"
+            aria-label="Settings"
+          >
+            ⚙️
+          </button>
+        )}
       </div>
     </div>
   )
@@ -187,7 +196,7 @@ function QuickActions({ onNavigate }: { onNavigate: (page: string) => void }) {
     { label: 'Bonds', icon: '🔗', desc: 'Faction synergy', page: 'resonance', glow: 'hover:shadow-pink-500/20' },
   ]
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
       {actions.map((a, i) => (
         <button
           key={a.label}
@@ -358,7 +367,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (page: string) =
 
   return (
     <div className="min-h-screen bg-[#0a060f] text-white flex flex-col">
-      <PlayerTopBar />
+      <PlayerTopBar onNavigate={onNavigate} />
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
