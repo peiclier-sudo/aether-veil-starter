@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Dashboard from './components/Dashboard'
 import RosterPage from './components/RosterPage'
 import SummonPortal from './components/SummonPortal'
@@ -23,44 +23,74 @@ const navItems = [
 
 function App() {
   const [page, setPage] = useState('home')
+  const [transitioning, setTransitioning] = useState(false)
+  const [displayedPage, setDisplayedPage] = useState('home')
+  const pendingPage = useRef<string | null>(null)
+
+  const navigate = useCallback((target: string) => {
+    if (target === displayedPage || transitioning) return
+    pendingPage.current = target
+    setTransitioning(true)
+  }, [displayedPage, transitioning])
+
+  // Handle the fade-out → swap → fade-in cycle
+  useEffect(() => {
+    if (!transitioning || !pendingPage.current) return
+    const timer = setTimeout(() => {
+      const next = pendingPage.current!
+      pendingPage.current = null
+      setPage(next)
+      setDisplayedPage(next)
+      setTransitioning(false)
+    }, 150) // fade-out duration
+    return () => clearTimeout(timer)
+  }, [transitioning])
 
   const renderPage = () => {
     switch (page) {
       case 'home':
-        return <Dashboard onNavigate={setPage} />
+        return <Dashboard onNavigate={navigate} />
       case 'roster':
-        return <RosterPage onBack={() => setPage('home')} />
+        return <RosterPage onBack={() => navigate('home')} />
       case 'summon':
-        return <SummonPortal onBack={() => setPage('home')} />
+        return <SummonPortal onBack={() => navigate('home')} />
       case 'team':
-        return <TeamBuilder onBack={() => setPage('home')} />
+        return <TeamBuilder onBack={() => navigate('home')} />
       case 'campaign':
-        return <CampaignPage onBack={() => setPage('home')} onTeamBuilder={() => setPage('team')} />
+        return <CampaignPage onBack={() => navigate('home')} onTeamBuilder={() => navigate('team')} />
       case 'arena':
-        return <ArenaPage onBack={() => setPage('home')} onTeamBuilder={() => setPage('team')} />
+        return <ArenaPage onBack={() => navigate('home')} onTeamBuilder={() => navigate('team')} />
       case 'dungeons':
-        return <DungeonsPage onBack={() => setPage('home')} onTeamBuilder={() => setPage('team')} />
+        return <DungeonsPage onBack={() => navigate('home')} onTeamBuilder={() => navigate('team')} />
       case 'resonance':
-        return <ResonanceBonds onBack={() => setPage('home')} />
+        return <ResonanceBonds onBack={() => navigate('home')} />
       case 'ascension':
-        return <AscensionPage onBack={() => setPage('home')} />
+        return <AscensionPage onBack={() => navigate('home')} />
       case 'shop':
-        return <ShopPage onBack={() => setPage('home')} />
+        return <ShopPage onBack={() => navigate('home')} />
       case 'inventory':
-        return <InventoryPage onBack={() => setPage('home')} />
+        return <InventoryPage onBack={() => navigate('home')} />
       case 'achievements':
-        return <AchievementsPage onBack={() => setPage('home')} />
+        return <AchievementsPage onBack={() => navigate('home')} />
       case 'guild':
-        return <GuildPage onBack={() => setPage('home')} />
+        return <GuildPage onBack={() => navigate('home')} />
       default:
-        return <Dashboard onNavigate={setPage} />
+        return <Dashboard onNavigate={navigate} />
     }
   }
 
   return (
     <div className="min-h-screen bg-[#0a060f] flex flex-col">
       <div className="flex-1 overflow-hidden">
-        {renderPage()}
+        <div
+          className="h-full transition-all duration-150 ease-in-out"
+          style={{
+            opacity: transitioning ? 0 : 1,
+            transform: transitioning ? 'translateY(8px) scale(0.99)' : 'translateY(0) scale(1)',
+          }}
+        >
+          {renderPage()}
+        </div>
       </div>
 
       {/* Bottom navigation */}
@@ -68,17 +98,17 @@ function App() {
         {navItems.map(item => (
           <button
             key={item.id}
-            onClick={() => setPage(item.id)}
+            onClick={() => navigate(item.id)}
             className={`flex flex-col items-center gap-0.5 py-2 px-3 rounded-lg transition-all ${
-              page === item.id
+              displayedPage === item.id
                 ? 'text-yellow-400'
                 : 'text-white/40 hover:text-white/60'
             }`}
           >
-            <span className={`text-xl transition-transform ${page === item.id ? 'scale-110' : ''}`}>{item.icon}</span>
+            <span className={`text-xl transition-transform duration-200 ${displayedPage === item.id ? 'scale-110 -translate-y-0.5' : ''}`}>{item.icon}</span>
             <span className="text-[10px] font-medium">{item.label}</span>
-            {page === item.id && (
-              <div className="w-1 h-1 rounded-full bg-yellow-400 mt-0.5" />
+            {displayedPage === item.id && (
+              <div className="w-1 h-1 rounded-full bg-yellow-400 mt-0.5 animate-[scale-in_0.2s_ease-out]" />
             )}
           </button>
         ))}
