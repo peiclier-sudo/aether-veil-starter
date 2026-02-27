@@ -32,8 +32,8 @@ export default function RosterPage({ onBack }: { onBack: () => void }) {
   return (
     <div className="min-h-screen bg-[#0a060f] text-white flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/60 backdrop-blur-md border-b border-white/10">
-        <button onClick={onBack} className="text-white/60 hover:text-white text-sm transition flex items-center gap-1">
+      <div className="flex items-center justify-between px-4 py-3 bg-black/60 backdrop-blur-md border-b border-white/10 animate-[slide-down_0.3s_ease-out]">
+        <button onClick={onBack} className="text-white/60 hover:text-white text-sm transition-all hover:-translate-x-0.5 flex items-center gap-1">
           ← Back
         </button>
         <h1 className="text-sm font-bold uppercase tracking-wider">Champions</h1>
@@ -41,25 +41,34 @@ export default function RosterPage({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Rarity tabs */}
-      <div className="flex gap-1 px-4 py-2 bg-black/30 border-b border-white/5 overflow-x-auto">
-        {(['all', 'legendary', 'epic', 'rare', 'common'] as const).map(r => (
-          <button
-            key={r}
-            onClick={() => setRarityFilter(r)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
-              rarityFilter === r
-                ? 'bg-white/15 text-white'
-                : 'text-white/40 hover:text-white/60'
-            }`}
-          >
-            {r === 'all' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1)}
-            <span className="ml-1 text-[10px] text-white/30">{counts[r]}</span>
-          </button>
-        ))}
+      <div className="flex gap-1 px-4 py-2 bg-black/30 border-b border-white/5 overflow-x-auto animate-[fade-up_0.2s_ease-out]">
+        {(['all', 'legendary', 'epic', 'rare', 'common'] as const).map(r => {
+          const tabColors: Record<string, string> = {
+            all: 'bg-white/15 text-white',
+            legendary: 'bg-yellow-500/20 text-yellow-400',
+            epic: 'bg-purple-500/20 text-purple-400',
+            rare: 'bg-blue-500/20 text-blue-400',
+            common: 'bg-zinc-500/20 text-zinc-400',
+          }
+          return (
+            <button
+              key={r}
+              onClick={() => setRarityFilter(r)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                rarityFilter === r
+                  ? tabColors[r]
+                  : 'text-white/40 hover:text-white/60 hover:bg-white/5'
+              }`}
+            >
+              {r === 'all' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1)}
+              <span className="ml-1 text-[10px] text-white/30">{counts[r]}</span>
+            </button>
+          )
+        })}
       </div>
 
       {/* Filters row */}
-      <div className="flex gap-2 px-4 py-2 bg-black/20 border-b border-white/5">
+      <div className="flex gap-2 px-4 py-2 bg-black/20 border-b border-white/5 animate-[fade-up_0.25s_ease-out]">
         <input
           type="text"
           placeholder="Search..."
@@ -91,12 +100,17 @@ export default function RosterPage({ onBack }: { onBack: () => void }) {
       {/* Hero grid */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-          {filteredHeroes.map(hero => (
-            <HeroCard
+          {filteredHeroes.map((hero, i) => (
+            <div
               key={hero.id}
-              hero={hero}
-              onClick={() => setSelectedHero(hero)}
-            />
+              className="animate-[fade-up_0.3s_ease-out]"
+              style={{ animationDelay: `${0.05 + i * 0.03}s`, animationFillMode: 'backwards' }}
+            >
+              <HeroCard
+                hero={hero}
+                onClick={() => setSelectedHero(hero)}
+              />
+            </div>
           ))}
         </div>
 
@@ -109,6 +123,11 @@ export default function RosterPage({ onBack }: { onBack: () => void }) {
 
       {/* Detail modal */}
       {selectedHero && <HeroDetail hero={selectedHero} onClose={() => setSelectedHero(null)} />}
+
+      <style>{`
+        @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slide-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
     </div>
   )
 }

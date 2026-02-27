@@ -4,6 +4,7 @@ import { generateGear } from '@/lib/gear-generator'
 import { heroToBattleUnit } from '@/lib/battle-engine'
 import { generateDungeonEnemies } from '@/lib/enemy-data'
 import { useNotifications } from '@/lib/notifications'
+import { BP_XP_REWARDS } from '@/lib/battle-pass-data'
 import BattlePage from './BattlePage'
 
 interface Dungeon {
@@ -248,7 +249,7 @@ function DungeonBattle({
 }
 
 export default function DungeonsPage({ onBack, onTeamBuilder }: { onBack: () => void; onTeamBuilder: () => void }) {
-  const { currentTeam, heroes, energy, spendEnergy, addShards, addToInventory, incrementDungeonClears } = useGameStore()
+  const { currentTeam, heroes, energy, spendEnergy, addShards, addToInventory, incrementDungeonClears, trackDailyQuest, addBattlePassXp, incrementBattlesWon } = useGameStore()
   const { addToast } = useNotifications()
   const [selectedDungeon, setSelectedDungeon] = useState<Dungeon | null>(null)
   const [battleFloor, setBattleFloor] = useState<{ dungeon: Dungeon; floor: DungeonFloor } | null>(null)
@@ -272,6 +273,9 @@ export default function DungeonsPage({ onBack, onTeamBuilder }: { onBack: () => 
         addShards(shards)
         gear.forEach(g => addToInventory(g))
         incrementDungeonClears()
+        incrementBattlesWon()
+        trackDailyQuest('dungeonClearsToday')
+        addBattlePassXp(BP_XP_REWARDS.dungeonClear)
         addToast({ type: 'reward', title: 'Dungeon Cleared!', message: `+${shards} shards, ${gear.length} gear`, icon: '🌀' })
       }
     }

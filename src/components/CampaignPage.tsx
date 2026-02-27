@@ -4,6 +4,7 @@ import { generateGear } from '@/lib/gear-generator'
 import { heroToBattleUnit } from '@/lib/battle-engine'
 import { generateCampaignEnemies } from '@/lib/enemy-data'
 import { useNotifications } from '@/lib/notifications'
+import { BP_XP_REWARDS } from '@/lib/battle-pass-data'
 import BattlePage from './BattlePage'
 
 const difficultyStyle: Record<string, { text: string; bg: string; border: string }> = {
@@ -129,7 +130,7 @@ function CampaignBattle({
 }
 
 export default function CampaignPage({ onBack, onTeamBuilder }: { onBack: () => void; onTeamBuilder: () => void }) {
-  const { campaignStages, currentTeam, heroes, energy, spendEnergy, addShards, completeCampaignStage, addToInventory } = useGameStore()
+  const { campaignStages, currentTeam, heroes, energy, spendEnergy, addShards, completeCampaignStage, addToInventory, trackDailyQuest, addBattlePassXp, incrementBattlesWon } = useGameStore()
   const { addToast } = useNotifications()
   const [battleStage, setBattleStage] = useState<CampaignStage | null>(null)
 
@@ -173,6 +174,9 @@ export default function CampaignPage({ onBack, onTeamBuilder }: { onBack: () => 
         completeCampaignStage(battleStage.id, stars)
         addShards(battleStage.rewards.shards)
         gearDrops.forEach(g => addToInventory(g))
+        incrementBattlesWon()
+        trackDailyQuest('campaignClearsToday')
+        addBattlePassXp(BP_XP_REWARDS.campaignStage)
         addToast({
           type: 'reward',
           title: `${battleStage.name} Cleared!`,

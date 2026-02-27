@@ -64,6 +64,9 @@ export interface AchievementProgress {
   claimedTier: number
 }
 
+import { BattlePassState, CURRENT_SEASON } from './battle-pass-data'
+import { DailyQuestProgress } from './daily-quests'
+
 export const MAX_ENERGY = 120
 export const ENERGY_REGEN_INTERVAL_MS = 300000 // 5 minutes per 1 energy
 
@@ -96,6 +99,9 @@ export interface PlayerState {
   totalGearSold: number
   totalShopPurchases: number
   totalBattlesWon: number
+  battlePass: BattlePassState
+  dailyQuestProgress: DailyQuestProgress
+  starterPackPurchased: boolean
   addHero: (hero: Hero) => void
   equipGear: (heroId: string, gear: Gear) => void
   unequipGear: (heroId: string, slot: Gear['slot']) => void
@@ -128,6 +134,12 @@ export interface PlayerState {
   checkDailyLogin: () => { isNewDay: boolean; streak: number }
   claimDailyReward: () => number
   incrementBattlesWon: () => void
+  addBattlePassXp: (xp: number) => void
+  unlockPremiumPass: () => boolean
+  claimBattlePassReward: (level: number, track: 'free' | 'premium') => boolean
+  trackDailyQuest: (key: string, amount?: number) => void
+  claimDailyQuestReward: (questId: string) => boolean
+  purchaseStarterPack: () => boolean
 }
 
 const seedHeroes: Hero[] = [
@@ -199,6 +211,9 @@ export const useGameStore = create<PlayerState>()(
       totalGearSold: 0,
       totalShopPurchases: 0,
       totalBattlesWon: 0,
+      battlePass: { seasonId: CURRENT_SEASON, isPremium: false, xp: 0, claimedFree: [], claimedPremium: [] },
+      dailyQuestProgress: { date: new Date().toISOString().slice(0, 10), progress: { loginToday: 1 }, claimed: [] },
+      starterPackPurchased: false,
 
       addHero: (hero) => set((state) => ({ heroes: [...state.heroes, hero] })),
       equipGear: (heroId, gear) =>
@@ -417,10 +432,52 @@ export const useGameStore = create<PlayerState>()(
         return reward
       },
       incrementBattlesWon: () => set((state) => ({ totalBattlesWon: state.totalBattlesWon + 1 })),
+      addBattlePassXp: (xp) => set((state) => ({ battlePass: { ...state.battlePass, xp: state.battlePass.xp + xp } })),
+      unlockPremiumPass: () => {
+        const state = get()
+        const cost = 1500
+        if (state.aetherShards < cost || state.battlePass.isPremium) return false
+        set({ battlePass: { ...state.battlePass, isPremium: true }, aetherShards: state.aetherShards - cost, totalShardsSpent: state.totalShardsSpent + cost })
+        return true
+      },
+      claimBattlePassReward: (level, track) => {
+        const state = get()
+        const bp = state.battlePass
+        const list = track === 'free' ? bp.claimedFree : bp.claimedPremium
+        if (list.includes(level)) return false
+        if (track === 'premium' && !bp.isPremium) return false
+        const newList = [...list, level]
+        const updated = track === 'free' ? { ...bp, claimedFree: newList } : { ...bp, claimedPremium: newList }
+        set({ battlePass: updated })
+        return true
+      },
+      trackDailyQuest: (key, amount = 1) => {
+        const state = get()
+        const today = new Date().toISOString().slice(0, 10)
+        let dqp = state.dailyQuestProgress
+        if (dqp.date !== today) dqp = { date: today, progress: { loginToday: 1 }, claimed: [] }
+        const current = dqp.progress[key] || 0
+        set({ dailyQuestProgress: { ...dqp, progress: { ...dqp.progress, [key]: current + amount } } })
+      },
+      claimDailyQuestReward: (questId) => {
+        const state = get()
+        const dqp = state.dailyQuestProgress
+        if (dqp.claimed.includes(questId)) return false
+        set({ dailyQuestProgress: { ...dqp, claimed: [...dqp.claimed, questId] } })
+        return true
+      },
+      purchaseStarterPack: () => {
+        const state = get()
+        if (state.starterPackPurchased) return false
+        const cost = 500
+        if (state.aetherShards < cost) return false
+        set({ starterPackPurchased: true, aetherShards: state.aetherShards - cost + 3000, energy: MAX_ENERGY, totalShardsSpent: state.totalShardsSpent + cost })
+        return true
+      },
     }),
     {
       name: 'aether-veil-storage',
-      version: 6,
+      version: 7,
       migrate: (persisted: any) => {
         const state = persisted || {}
         if (!state.heroes || state.heroes.length === 0) state.heroes = seedHeroes
@@ -446,6 +503,10 @@ export const useGameStore = create<PlayerState>()(
         if (state.loginStreak === undefined) state.loginStreak = 1
         if (state.dailyRewardClaimed === undefined) state.dailyRewardClaimed = false
         if (state.totalBattlesWon === undefined) state.totalBattlesWon = 0
+        // v7 fields
+        if (!state.battlePass) state.battlePass = { seasonId: CURRENT_SEASON, isPremium: false, xp: 0, claimedFree: [], claimedPremium: [] }
+        if (!state.dailyQuestProgress) state.dailyQuestProgress = { date: new Date().toISOString().slice(0, 10), progress: { loginToday: 1 }, claimed: [] }
+        if (state.starterPackPurchased === undefined) state.starterPackPurchased = false
         if (state.heroes) {
           state.heroes = state.heroes.map((h: any) => ({
             ...h,

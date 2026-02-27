@@ -4,6 +4,7 @@ import { generateGear } from '@/lib/gear-generator'
 import { heroToBattleUnit } from '@/lib/battle-engine'
 import { generateArenaEnemies } from '@/lib/enemy-data'
 import { useNotifications } from '@/lib/notifications'
+import { BP_XP_REWARDS } from '@/lib/battle-pass-data'
 import BattlePage from './BattlePage'
 
 interface ArenaOpponent {
@@ -99,7 +100,7 @@ function ArenaBattle({
 }
 
 export default function ArenaPage({ onBack, onTeamBuilder }: { onBack: () => void; onTeamBuilder: () => void }) {
-  const { currentTeam, heroes, arenaRating, arenaWins, arenaLosses, updateArenaRating, addShards, addToInventory, incrementBattlesWon } = useGameStore()
+  const { currentTeam, heroes, arenaRating, arenaWins, arenaLosses, updateArenaRating, addShards, addToInventory, incrementBattlesWon, trackDailyQuest, addBattlePassXp } = useGameStore()
   const { addToast } = useNotifications()
   const [battleOpponent, setBattleOpponent] = useState<ArenaOpponent | null>(null)
 
@@ -127,7 +128,11 @@ export default function ArenaPage({ onBack, onTeamBuilder }: { onBack: () => voi
       addShards(shardReward)
       gear.forEach(g => addToInventory(g))
       incrementBattlesWon()
+      trackDailyQuest('arenaWinsToday')
+      addBattlePassXp(BP_XP_REWARDS.arenaWin)
       addToast({ type: 'reward', title: 'Arena Victory!', message: `+${ratingChange} rating, +${shardReward} shards`, icon: '🏟️' })
+    } else {
+      addBattlePassXp(BP_XP_REWARDS.arenaLoss)
     }
     setBattleOpponent(null)
   }

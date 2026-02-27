@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useGameStore, Gear } from '@/lib/store'
 import { GEAR_SELL_VALUES } from '@/lib/shop-data'
+import { useNotifications } from '@/lib/notifications'
 
 const rarityColor: Record<string, string> = {
   common: 'border-zinc-500/50 text-zinc-400',
@@ -22,11 +23,11 @@ const rarityOrder: Record<string, number> = { legendary: 4, epic: 3, rare: 2, co
 
 export default function InventoryPage({ onBack }: { onBack: () => void }) {
   const { inventory, sellGear } = useGameStore()
+  const { addToast } = useNotifications()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [sortBy, setSortBy] = useState<SortKey>('rarity')
   const [filterSlot, setFilterSlot] = useState<FilterSlot>('all')
   const [filterRarity, setFilterRarity] = useState<FilterRarity>('all')
-  const [sellResult, setSellResult] = useState<number | null>(null)
 
   const filtered = useMemo(() => {
     let items = [...inventory]
@@ -62,22 +63,22 @@ export default function InventoryPage({ onBack }: { onBack: () => void }) {
 
   const handleSell = () => {
     if (selectedIds.size === 0) return
+    const count = selectedIds.size
     const value = sellGear(Array.from(selectedIds))
-    setSellResult(value)
     setSelectedIds(new Set())
-    setTimeout(() => setSellResult(null), 2000)
+    addToast({ type: 'reward', title: `Sold ${count} Gear`, message: `+${value} shards`, icon: '💎' })
   }
 
   return (
     <div className="min-h-screen bg-[#0a060f] text-white flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 bg-black/60 backdrop-blur-md border-b border-white/10">
-        <button onClick={onBack} className="text-white/60 hover:text-white text-sm transition">← Back</button>
+      <div className="flex items-center justify-between px-4 py-3 bg-black/60 backdrop-blur-md border-b border-white/10 animate-[slide-down_0.3s_ease-out]">
+        <button onClick={onBack} className="text-white/60 hover:text-white text-sm transition-all hover:-translate-x-0.5">← Back</button>
         <h1 className="text-sm font-bold uppercase tracking-wider">Inventory</h1>
         <span className="text-xs text-white/40">{inventory.length} items</span>
       </div>
 
       {/* Filters */}
-      <div className="px-4 py-3 bg-black/30 border-b border-white/5 space-y-2">
+      <div className="px-4 py-3 bg-black/30 border-b border-white/5 space-y-2 animate-[fade-up_0.2s_ease-out]">
         <div className="flex items-center gap-2">
           <select
             value={filterSlot}
@@ -117,7 +118,7 @@ export default function InventoryPage({ onBack }: { onBack: () => void }) {
           {selectedIds.size > 0 && (
             <button
               onClick={handleSell}
-              className="px-4 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white hover:brightness-110 transition"
+              className="px-4 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white hover:brightness-110 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-red-500/20"
             >
               Sell {selectedIds.size} — 💎 {totalSellValue}
             </button>
@@ -134,17 +135,18 @@ export default function InventoryPage({ onBack }: { onBack: () => void }) {
             <p className="text-[10px] text-white/30 mt-1">Win battles to earn gear drops</p>
           </div>
         ) : (
-          filtered.map(gear => {
+          filtered.map((gear, i) => {
             const isSelected = selectedIds.has(gear.id)
             return (
               <button
                 key={gear.id}
                 onClick={() => toggleSelect(gear.id)}
-                className={`w-full text-left rounded-xl border p-3 transition-all ${
+                className={`w-full text-left rounded-xl border p-3 transition-all hover:brightness-110 animate-[fade-up_0.3s_ease-out] ${
                   isSelected
-                    ? 'border-red-400/60 bg-red-500/10'
-                    : `${rarityColor[gear.rarity].split(' ')[0]} bg-white/5`
+                    ? 'border-red-400/60 bg-red-500/10 scale-[0.98]'
+                    : `${rarityColor[gear.rarity].split(' ')[0]} bg-white/[0.03] hover:bg-white/[0.06]`
                 }`}
+                style={{ animationDelay: `${0.05 + i * 0.02}s`, animationFillMode: 'backwards' }}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-lg">
@@ -171,12 +173,10 @@ export default function InventoryPage({ onBack }: { onBack: () => void }) {
         )}
       </div>
 
-      {/* Sell result toast */}
-      {sellResult !== null && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500/90 text-white px-6 py-3 rounded-xl text-sm font-bold z-50 animate-pulse">
-          Sold for 💎 {sellResult} shards!
-        </div>
-      )}
+      <style>{`
+        @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slide-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
     </div>
   )
 }

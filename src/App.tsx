@@ -12,9 +12,11 @@ import ShopPage from './components/ShopPage'
 import InventoryPage from './components/InventoryPage'
 import AchievementsPage from './components/AchievementsPage'
 import GuildPage from './components/GuildPage'
+import BattlePassPage from './components/BattlePassPage'
 import ToastContainer from './components/ToastContainer'
 import { useGameStore } from './lib/store'
 import { useNotifications } from './lib/notifications'
+import { BP_XP_REWARDS } from './lib/battle-pass-data'
 
 const navItems = [
   { id: 'home', label: 'Home', icon: '🏠' },
@@ -29,7 +31,7 @@ function App() {
   const [transitioning, setTransitioning] = useState(false)
   const [displayedPage, setDisplayedPage] = useState('home')
   const pendingPage = useRef<string | null>(null)
-  const { tickEnergyRegen, checkDailyLogin } = useGameStore()
+  const { tickEnergyRegen, checkDailyLogin, addBattlePassXp } = useGameStore()
   const { addToast } = useNotifications()
   const dailyChecked = useRef(false)
 
@@ -46,6 +48,7 @@ function App() {
     dailyChecked.current = true
     const result = checkDailyLogin()
     if (result.isNewDay) {
+      addBattlePassXp(BP_XP_REWARDS.dailyLogin)
       addToast({
         type: 'reward',
         title: `Day ${result.streak} Login Streak!`,
@@ -103,6 +106,8 @@ function App() {
         return <AchievementsPage onBack={() => navigate('home')} />
       case 'guild':
         return <GuildPage onBack={() => navigate('home')} />
+      case 'battlepass':
+        return <BattlePassPage onBack={() => navigate('home')} />
       default:
         return <Dashboard onNavigate={navigate} />
     }

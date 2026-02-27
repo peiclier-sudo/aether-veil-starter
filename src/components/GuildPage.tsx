@@ -4,10 +4,11 @@ import { GUILD_PERKS, GUILD_CREATION_COST } from '@/lib/guild-data'
 import { heroToBattleUnit } from '@/lib/battle-engine'
 import { generateGuildBossUnit } from '@/lib/enemy-data'
 import { useNotifications } from '@/lib/notifications'
+import { BP_XP_REWARDS } from '@/lib/battle-pass-data'
 import BattlePage from './BattlePage'
 
 export default function GuildPage({ onBack }: { onBack: () => void }) {
-  const { guild, aetherShards, createGuild, donateToGuild, attackGuildBoss, heroes, currentTeam } = useGameStore()
+  const { guild, aetherShards, createGuild, donateToGuild, attackGuildBoss, heroes, currentTeam, addBattlePassXp } = useGameStore()
   const { addToast } = useNotifications()
   const [guildName, setGuildName] = useState('')
   const [donateAmount, setDonateAmount] = useState(100)
@@ -37,6 +38,7 @@ export default function GuildPage({ onBack }: { onBack: () => void }) {
   const handleBossResult = (won: boolean) => {
     setBossBattle(false)
     if (!guild) return
+    addBattlePassXp(BP_XP_REWARDS.guildBossAttack)
     if (won) {
       const damage = guild.boss.hp
       const result = attackGuildBoss(damage)
