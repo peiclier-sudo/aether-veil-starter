@@ -19,8 +19,8 @@ const SCORE_COLORS = ["#22c55e", "#eab308", "#f97316", "#ef4444"];
 
 const tooltipStyle = {
   contentStyle: {
-    background: "#111116",
-    border: "1px solid #2a2a33",
+    background: "#13151d",
+    border: "1px solid #2c2f3c",
     borderRadius: 0,
     fontSize: 12,
     fontFamily: "'JetBrains Mono', monospace",
@@ -82,39 +82,39 @@ export default function Analytics() {
   return (
     <div className="page-in mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-lime">02 / Analytics</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">02 / Analytics</p>
         <h1 className="mt-1 font-display text-2xl font-extrabold text-heading">
           Vue d'ensemble
         </h1>
-        <p className="mt-1 font-mono text-[11px] text-muted">14 derniers jours</p>
+        <p className="mt-1 text-[12px] text-muted">14 derniers jours</p>
       </div>
 
       <div className="grid grid-cols-1 gap-px bg-border-subtle lg:grid-cols-2">
         {/* Volume */}
-        <div className="card rounded-none p-6">
-          <h3 className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted">
+        <div className="card p-6">
+          <h3 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-muted">
             Volume créations vs qualifiés
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={chartData} barGap={1}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e26" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2230" vertical={false} />
               <XAxis dataKey="date" tick={axisStyle} axisLine={false} tickLine={false} />
               <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
               <Tooltip {...tooltipStyle} />
-              <Bar dataKey="Créations" fill="#2a2a33" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="Qualifiés" fill="#c8ff00" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="Créations" fill="#2c2f3c" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="Qualifiés" fill="#5eead4" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Score distribution */}
-        <div className="card rounded-none p-6">
-          <h3 className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted">
+        <div className="card p-6">
+          <h3 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-muted">
             Distribution scores IA
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={scoreDistribution} layout="vertical" barSize={20}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e26" horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2230" horizontal={false} />
               <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
               <YAxis dataKey="name" type="category" tick={{ ...axisStyle, fontWeight: 600 }} width={50} axisLine={false} tickLine={false} />
               <Tooltip {...tooltipStyle} />
@@ -128,8 +128,8 @@ export default function Analytics() {
         </div>
 
         {/* Vertical pie */}
-        <div className="card rounded-none p-6">
-          <h3 className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted">
+        <div className="card p-6">
+          <h3 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-muted">
             Répartition par verticale
           </h3>
           <ResponsiveContainer width="100%" height={220}>
@@ -163,51 +163,51 @@ export default function Analytics() {
         </div>
 
         {/* Qualification trend */}
-        <div className="card rounded-none p-6">
-          <h3 className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted">
+        <div className="card p-6">
+          <h3 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-muted">
             Taux de qualification
           </h3>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={qualificationTrend}>
               <defs>
-                <linearGradient id="limeGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#c8ff00" stopOpacity={0.15} />
-                  <stop offset="100%" stopColor="#c8ff00" stopOpacity={0} />
+                <linearGradient id="accentGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#5eead4" stopOpacity={0.15} />
+                  <stop offset="100%" stopColor="#5eead4" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e26" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2230" vertical={false} />
               <XAxis dataKey="date" tick={axisStyle} axisLine={false} tickLine={false} />
               <YAxis tick={axisStyle} unit="%" axisLine={false} tickLine={false} />
               <Tooltip {...tooltipStyle} />
               <Area
                 type="monotone"
                 dataKey="taux"
-                stroke="#c8ff00"
+                stroke="#5eead4"
                 strokeWidth={2}
-                fill="url(#limeGrad)"
-                dot={{ fill: "#c8ff00", r: 2.5, strokeWidth: 0 }}
-                activeDot={{ r: 4, strokeWidth: 2, stroke: "#08080c" }}
+                fill="url(#accentGrad)"
+                dot={{ fill: "#5eead4", r: 2.5, strokeWidth: 0 }}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: "#0c0e14" }}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Regions — full width */}
-        <div className="card rounded-none p-6 lg:col-span-2">
-          <h3 className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted">
+        <div className="card p-6 lg:col-span-2">
+          <h3 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-muted">
             Top régions
           </h3>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {regionData.map((r, i) => (
               <div key={r.region} className="group relative overflow-hidden bg-slab p-3">
                 <div
-                  className="absolute inset-y-0 left-0 bg-lime/5 transition-all group-hover:bg-lime/10"
+                  className="absolute inset-y-0 left-0 bg-accent/5 transition-all group-hover:bg-accent/10"
                   style={{ width: `${(r.count / maxRegion) * 100}%` }}
                 />
                 <div className="relative flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <span className={`flex h-6 w-6 items-center justify-center font-mono text-[10px] font-bold ${
-                      i < 3 ? "bg-lime text-void" : "bg-border text-muted"
+                      i < 3 ? "bg-accent text-void" : "bg-border text-muted"
                     }`}>
                       {i + 1}
                     </span>
