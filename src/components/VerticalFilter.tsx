@@ -23,7 +23,7 @@ export default function VerticalFilter({
           <button
             key={item.id}
             onClick={() => onChange(item.id)}
-            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[13px] font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-all ${
               isActive
                 ? "text-white shadow-sm"
                 : "border border-border text-sub hover:border-raised hover:text-heading"
