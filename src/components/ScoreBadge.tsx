@@ -6,9 +6,9 @@ interface ScoreBadgeProps {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 75) return "#22c55e";
-  if (score >= 50) return "#eab308";
-  return "#ef4444";
+  if (score >= 75) return "#16a34a";
+  if (score >= 50) return "#d97706";
+  return "#dc2626";
 }
 
 const dims = {
@@ -36,7 +36,7 @@ export default function ScoreBadge({ score, size = "md" }: ScoreBadgeProps) {
             cy={d.box / 2}
             r={d.r}
             fill="none"
-            stroke="var(--color-border)"
+            stroke="var(--color-surface)"
             strokeWidth={d.sw}
           />
           <circle
@@ -48,7 +48,7 @@ export default function ScoreBadge({ score, size = "md" }: ScoreBadgeProps) {
             strokeWidth={d.sw}
             strokeDasharray={circ}
             strokeDashoffset={offset}
-            strokeLinecap="butt"
+            strokeLinecap="round"
             className="score-ring-track"
           />
         </svg>
@@ -60,7 +60,7 @@ export default function ScoreBadge({ score, size = "md" }: ScoreBadgeProps) {
         </span>
       </div>
       {size !== "sm" && (
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
           {getScoreLabel(score)}
         </span>
       )}

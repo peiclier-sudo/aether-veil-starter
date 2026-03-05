@@ -8,7 +8,7 @@ import Settings from "./pages/Settings";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-void text-body">
+    <div className="min-h-screen bg-white text-body">
       <Navbar />
       <Routes>
         <Route path="/" element={<Landing />} />

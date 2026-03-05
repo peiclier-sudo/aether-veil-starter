@@ -23,12 +23,12 @@ export default function VerticalFilter({
           <button
             key={item.id}
             onClick={() => onChange(item.id)}
-            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[13px] font-semibold transition-all ${
               isActive
-                ? "text-void"
-                : "border border-border text-muted hover:border-sub hover:text-heading"
+                ? "text-white shadow-sm"
+                : "border border-border text-sub hover:border-raised hover:text-heading"
             }`}
-            style={isActive ? { background: item.color, color: "var(--color-void)" } : undefined}
+            style={isActive ? { background: item.color } : undefined}
           >
             <item.icon className="h-3.5 w-3.5" />
             {item.label}
