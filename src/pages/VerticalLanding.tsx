@@ -20,6 +20,8 @@ import {
   Building2,
   Zap,
   ArrowUpRight,
+  Quote,
+  Star,
 } from "lucide-react";
 import { mockLeads, verticals } from "@/lib/mock-data";
 import { relativeDate } from "@/lib/utils";
@@ -40,85 +42,127 @@ const verticalContent: Record<
     benefits: { icon: typeof Globe; title: string; desc: string }[];
     cta: string;
     ctaFinal: string;
+    painPoints: string[];
+    testimonial: { quote: string; name: string; role: string; company: string };
+    roiExample: { revenue: string; label: string; payback: string };
   }
 > = {
   "agences-web": {
     slug: "agences-web",
     verticalId: "agence-web",
     headline: [
-      "Trouvez les entreprises",
-      "sans site web",
-      "avant vos concurrents.",
+      "62% des entreprises créées hier",
+      "n'ont pas de site web.",
+      "Vous les contactez demain à 8h.",
     ],
-    sub: "Chaque jour, des centaines d'entreprises sont créées sans présence digitale. NewCo Intel les identifie, les qualifie et vous les livre avec email du dirigeant — prêtes à prospecter.",
-    badge: "Pipeline agences web",
+    sub: "Chaque jour, des centaines d'entreprises sont immatriculées sans aucune présence digitale. NewCo Intel les détecte par DNS, les qualifie par IA et vous les livre avec l'email du dirigeant — avant que vos concurrents ne les trouvent.",
+    badge: "Solution Agences Web",
     heroStats: [
-      { val: "62%", label: "n'ont pas de site web" },
-      { val: "~40", label: "leads/jour pour votre agence" },
-      { val: "8h", label: "livrés chaque matin" },
+      { val: "62%", label: "sans site web détecté" },
+      { val: "~40", label: "leads qualifiés / jour" },
+      { val: "48h", label: "entre création et premier contact" },
+    ],
+    painPoints: [
+      "Vous prospectez sur LinkedIn — 2h/jour pour 3 réponses",
+      "Les annuaires d'entreprises ont les mêmes leads que 50 autres agences",
+      "Impossible de savoir quelles nouvelles entreprises n'ont pas encore de site",
+      "Quand vous les trouvez, un concurrent les a déjà contactées",
     ],
     benefits: [
-      { icon: Globe, title: "Détection DNS automatique", desc: "On scrape le DNS de chaque nouvelle entreprise. Pas de domaine = prospect chaud pour vous." },
-      { icon: Brain, title: "Score IA « besoin digital »", desc: "Notre IA évalue la probabilité qu'une entreprise ait besoin d'un site : secteur B2C, capital élevé, zone urbaine." },
-      { icon: Target, title: "Angle d'accroche personnalisé", desc: "Un message d'approche IA adapté au profil : « Votre activité de [X] mérite une vitrine en ligne. »" },
-      { icon: Mail, title: "Email du dirigeant vérifié", desc: "Enrichissement via Dropcontact + Societeinfo. 65% de couverture email sur les créations récentes." },
-      { icon: TrendingUp, title: "Stack technique détectée", desc: "Quand un site existe déjà, on détecte WordPress, Wix, Shopify — pour cibler les refontes." },
-      { icon: Clock, title: "Livraison quotidienne à 8h", desc: "Leads qualifiés dans votre dashboard ou par webhook. Prospectez avant que le café refroidisse." },
+      { icon: Globe, title: "Détection DNS automatique", desc: "On scrape le DNS de chaque nouvelle entreprise. Pas de domaine enregistré = prospect chaud qui a besoin d'un site." },
+      { icon: Brain, title: "Score « besoin digital »", desc: "L'IA évalue chaque entreprise : secteur B2C, capital élevé, zone urbaine, activité commerciale — plus le score est haut, plus elle a besoin de vous." },
+      { icon: Target, title: "Message d'accroche prêt à envoyer", desc: "Un email de prospection IA personnalisé pour chaque lead : « Votre activité de [X] à [ville] mérite une vitrine en ligne. »" },
+      { icon: Mail, title: "Email du dirigeant vérifié", desc: "Enrichissement via 4 sources croisées. 65% de couverture email sur les créations de moins de 7 jours." },
+      { icon: TrendingUp, title: "Stack technique détectée", desc: "Quand un site existe déjà, on détecte WordPress, Wix, Shopify — pour cibler les entreprises qui ont besoin d'une refonte." },
+      { icon: Clock, title: "Livraison à 8h, chaque matin", desc: "Vos leads qualifiés sont dans votre dashboard avant le premier café. Prospectez pendant que vos concurrents cherchent encore." },
     ],
-    cta: "Trouver mes premiers leads web",
-    ctaFinal: "Prêt à remplir votre pipeline agence ?",
+    testimonial: {
+      quote: "En 3 mois, on a signé 14 clients trouvés via NewCo Intel. Le ROI est délirant — le premier contrat a remboursé 6 mois d'abonnement.",
+      name: "Marie Lefebvre",
+      role: "Co-fondatrice",
+      company: "Agence Pixel",
+    },
+    roiExample: { revenue: "3 500€", label: "Valeur moyenne d'un site vitrine + SEO", payback: "Remboursé dès le 1er client" },
+    cta: "Trouver mes premiers prospects web",
+    ctaFinal: "Demain matin, 40 entreprises sans site web vous attendent.",
   },
   comptables: {
     slug: "comptables",
     verticalId: "expert-comptable",
     headline: [
-      "Les SAS et SARL",
-      "fraîchement créées",
+      "Les SAS créées hier",
       "cherchent un comptable.",
+      "Soyez le premier à appeler.",
     ],
-    sub: "Chaque jour, des dizaines de SAS, SARL et EURL sont immatriculées. Elles ont besoin d'un expert-comptable dans les 30 premiers jours. Soyez le premier à les contacter.",
-    badge: "Pipeline experts-comptables",
+    sub: "Chaque jour, des dizaines de SAS, SARL et EURL sont immatriculées. Elles ont besoin d'un expert-comptable dans les 30 premiers jours. NewCo Intel vous les livre avec le numéro du dirigeant — avant vos confrères.",
+    badge: "Solution Experts-Comptables",
     heroStats: [
-      { val: "300+", label: "SAS/SARL créées par jour" },
-      { val: "~35", label: "leads qualifiés/jour" },
-      { val: "30j", label: "fenêtre de décision" },
+      { val: "300+", label: "SAS/SARL créées par jour en France" },
+      { val: "~35", label: "leads qualifiés / jour" },
+      { val: "30 jours", label: "fenêtre de décision du dirigeant" },
+    ],
+    painPoints: [
+      "Vous comptez sur le bouche-à-oreille — imprévisible et non scalable",
+      "Les créateurs d'entreprises appellent 3 cabinets : celui qui appelle en premier gagne",
+      "Vous n'avez aucune visibilité sur les créations d'entreprises de votre zone",
+      "Les CSV achetés contiennent des entreprises créées il y a 6 mois — trop tard",
     ],
     benefits: [
-      { icon: Calculator, title: "Filtre forme juridique", desc: "On cible SAS, SARL, EURL et SCI — les structures qui ont structurellement besoin d'un expert-comptable." },
-      { icon: Brain, title: "Score IA « complexité fiscale »", desc: "Capital social, multi-associés, activité réglementée — notre IA identifie les dossiers à forte valeur." },
-      { icon: Target, title: "Accroche cabinet adaptée", desc: "« Votre SAS au capital de 50 000€ nécessite un accompagnement fiscal structuré dès J1. »" },
-      { icon: Users, title: "Contact dirigeant enrichi", desc: "Email + téléphone du gérant ou président via 4 sources croisées. Approche directe garantie." },
-      { icon: Database, title: "Données BODACC complètes", desc: "SIREN, SIRET, NAF, capital, adresse — toutes les infos légales pour qualifier avant d'appeler." },
-      { icon: Clock, title: "Alerte matinale", desc: "Les créations du jour livrées à 8h. Contactez le dirigeant avant qu'un confrère le fasse." },
+      { icon: Calculator, title: "Filtre par forme juridique", desc: "On cible SAS, SARL, EURL et SCI — les structures qui ont structurellement besoin d'un expert-comptable dès J1." },
+      { icon: Brain, title: "Score « complexité fiscale »", desc: "Capital social élevé, multi-associés, activité réglementée — l'IA identifie les dossiers à forte valeur pour votre cabinet." },
+      { icon: Target, title: "Accroche adaptée à votre cabinet", desc: "« Votre SAS au capital de 50 000€ nécessite un accompagnement fiscal structuré dès le premier exercice. »" },
+      { icon: Phone, title: "Téléphone du dirigeant enrichi", desc: "Email + téléphone du gérant ou président via 4 sources croisées. Appelez directement, sans intermédiaire." },
+      { icon: Database, title: "Données légales complètes", desc: "SIREN, SIRET, NAF, capital, adresse — toutes les infos pour qualifier avant de décrocher le téléphone." },
+      { icon: Clock, title: "Les créations d'hier, à 8h ce matin", desc: "Contactez le dirigeant le lendemain de la création de son entreprise. Aucun confrère n'est aussi rapide." },
     ],
+    testimonial: {
+      quote: "On a ajouté 22 dossiers en un trimestre, uniquement via NewCo Intel. Les dirigeants sont impressionnés qu'on les contacte le lendemain de leur immatriculation.",
+      name: "Thomas Moreau",
+      role: "Expert-comptable associé",
+      company: "Cabinet TM & Associés",
+    },
+    roiExample: { revenue: "4 500€/an", label: "Honoraires annuels moyens d'un dossier SAS", payback: "Remboursé dès le 1er dossier" },
     cta: "Trouver mes premiers leads comptables",
-    ctaFinal: "Prêt à développer votre portefeuille clients ?",
+    ctaFinal: "Demain matin, 35 SAS fraîchement créées attendent votre appel.",
   },
   assureurs: {
     slug: "assureurs",
     verticalId: "assureur",
     headline: [
-      "Chaque nouvelle entreprise",
-      "a besoin d'une assurance",
-      "professionnelle.",
+      "Chaque entreprise créée hier",
+      "a besoin d'une assurance.",
+      "Vous leur proposez dès demain.",
     ],
-    sub: "RC Pro, multirisque, flotte auto — les entreprises nouvellement créées sont obligées de s'assurer. Contactez-les dans les premières semaines, quand la décision n'est pas encore prise.",
-    badge: "Pipeline assureurs & courtiers",
+    sub: "RC Pro, multirisque, flotte auto — les entreprises nouvellement créées sont légalement obligées de s'assurer. Contactez-les dans les premières semaines, quand la décision n'est pas encore prise.",
+    badge: "Solution Assureurs & Courtiers",
     heroStats: [
-      { val: "100%", label: "ont besoin de RC Pro" },
-      { val: "~30", label: "leads qualifiés/jour" },
-      { val: "< 60j", label: "pour décider de l'assureur" },
+      { val: "100%", label: "ont besoin d'une RC Pro" },
+      { val: "~30", label: "leads qualifiés / jour" },
+      { val: "< 45j", label: "pour choisir leur assureur" },
+    ],
+    painPoints: [
+      "Les créateurs d'entreprises finissent chez l'assureur qui les contacte en premier",
+      "Vous achetez des listes déjà démarchées par 10 courtiers",
+      "Aucune visibilité sur les activités à risque (BTP, restauration, transport)",
+      "Quand vous les trouvez, ils ont déjà souscrit un contrat standard en ligne",
     ],
     benefits: [
-      { icon: Shield, title: "Détection activité à risque", desc: "BTP, restauration, transport — on identifie les secteurs où l'assurance est critique et obligatoire." },
-      { icon: Brain, title: "Score IA « besoin assurance »", desc: "Local commercial, employés estimés, véhicules pro — chaque signal augmente le score." },
-      { icon: Target, title: "Accroche courtier ciblée", desc: "« Votre activité de [X] nécessite une RC Pro adaptée. Obtenez un devis en 24h. »" },
-      { icon: Building2, title: "Local commercial détecté", desc: "On croise l'adresse avec les données immobilières pour estimer si un bail commercial est probable." },
-      { icon: Users, title: "Décideur identifié", desc: "Nom, email, téléphone du gérant — pour une approche directe et personnalisée." },
-      { icon: Clock, title: "Timing parfait", desc: "Les créations du jour livrées avant 8h. L'entreprise vient d'être créée : c'est le moment idéal." },
+      { icon: Shield, title: "Détection d'activité à risque", desc: "BTP, restauration, transport, sécurité — on identifie les secteurs où l'assurance est critique, obligatoire et à forte prime." },
+      { icon: Brain, title: "Score « besoin assurance »", desc: "Local commercial, nombre estimé d'employés, véhicules pro, stock marchandises — chaque signal augmente le score." },
+      { icon: Target, title: "Accroche courtier ciblée", desc: "« Votre activité de maçonnerie à Lyon nécessite une RC Pro décennale. Obtenez un devis comparatif en 24h. »" },
+      { icon: Building2, title: "Local commercial détecté", desc: "On croise l'adresse avec les données immobilières pour estimer si un bail commercial est probable — signal fort pour multirisque." },
+      { icon: Users, title: "Décideur identifié et joignable", desc: "Nom, email, téléphone du gérant — approche directe et personnalisée. Pas de standard, pas de secrétariat." },
+      { icon: Clock, title: "Le timing parfait", desc: "Les créations d'hier livrées avant 8h. L'entreprise vient d'être immatriculée : c'est le moment exact où tout se décide." },
     ],
+    testimonial: {
+      quote: "J'ai signé 8 contrats RC Pro le premier mois. Les dirigeants sont surpris et reconnaissants d'être contactés aussi vite après la création.",
+      name: "Nicolas Durand",
+      role: "Courtier indépendant",
+      company: "Assur+",
+    },
+    roiExample: { revenue: "1 800€/an", label: "Prime moyenne RC Pro + multirisque", payback: "Remboursé dès le 2e contrat" },
     cta: "Trouver mes premiers leads assurance",
-    ctaFinal: "Prêt à capter les nouvelles entreprises ?",
+    ctaFinal: "Demain matin, 30 entreprises nouvellement créées attendent votre devis.",
   },
 };
 
@@ -185,6 +229,10 @@ export default function VerticalLanding({ slug }: { slug: string }) {
                   {content.cta}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
+                <span className="flex items-center gap-2 text-[13px] text-muted">
+                  <Check className="h-3.5 w-3.5 text-score-high" />
+                  14 jours gratuits · sans CB
+                </span>
               </div>
 
               {/* Mini stats */}
@@ -202,7 +250,7 @@ export default function VerticalLanding({ slug }: { slug: string }) {
             <div className="anim-slide-left d3 lg:col-span-5">
               <div className="card overflow-hidden shadow-xl shadow-black/[0.06]">
                 <div className="flex items-center justify-between px-5 py-3.5" style={{ background: `${vConfig.color}06` }}>
-                  <span className="text-[13px] font-semibold text-heading">Leads {vConfig.label}</span>
+                  <span className="text-[13px] font-semibold text-heading">Leads du jour — {vConfig.label}</span>
                   <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: `${vConfig.color}12`, color: vConfig.color }}>
                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: vConfig.color, animation: "pulse-dot 2s ease infinite" }} />
                     {leads.length} leads
@@ -250,16 +298,63 @@ export default function VerticalLanding({ slug }: { slug: string }) {
         </div>
       </section>
 
-      {/* ── Benefits ────────────────────────────── */}
+      {/* ── Pain points → Solution ───────────── */}
       <section className="py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-16 lg:grid-cols-2">
+            <div>
+              <p className="mb-3 text-[13px] font-semibold uppercase tracking-widest text-red-500">
+                Ce que vous vivez aujourd'hui
+              </p>
+              <h2 className="font-display text-[2rem] leading-tight text-heading sm:text-[2.2rem]">
+                Prospecter à l'aveugle, c'est brûler du temps et de l'argent.
+              </h2>
+              <div className="mt-8 space-y-4">
+                {content.painPoints.map((p) => (
+                  <div key={p} className="flex items-start gap-3 text-[15px] leading-relaxed text-sub">
+                    <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-red-400" />
+                    {p}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-3 text-[13px] font-semibold uppercase tracking-widest" style={{ color: vConfig.color }}>
+                Avec NewCo Intel
+              </p>
+              <h2 className="font-display text-[2rem] leading-tight text-heading sm:text-[2.2rem]">
+                Des leads exclusifs, qualifiés, livrés chaque matin.
+              </h2>
+              <div className="mt-8 space-y-4">
+                {[
+                  `${content.heroStats[1].val} leads qualifiés par jour, adaptés à votre métier`,
+                  "Email + téléphone du dirigeant enrichis automatiquement",
+                  "Score IA 0-100 : vous ne contactez que les meilleurs prospects",
+                  "Message d'accroche IA prêt à copier dans votre email ou CRM",
+                ].map((s) => (
+                  <div key={s} className="flex items-start gap-3 text-[15px] leading-relaxed text-sub">
+                    <span className="flex mt-0.5 h-5 w-5 flex-shrink-0 items-center justify-center rounded-full" style={{ background: `${vConfig.color}12` }}>
+                      <Check className="h-3 w-3" style={{ color: vConfig.color }} />
+                    </span>
+                    {s}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Benefits ────────────────────────────── */}
+      <section className="bg-bg py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-16 max-w-2xl">
             <p className="mb-3 text-[13px] font-semibold uppercase tracking-widest" style={{ color: vConfig.color }}>
-              Conçu pour les {vConfig.label.toLowerCase()}
+              Conçu pour votre métier
             </p>
             <h2 className="font-display text-[2.5rem] leading-tight text-heading sm:text-5xl">
-              Pourquoi NewCo Intel pour{" "}
-              <span className="italic" style={{ color: vConfig.color }}>votre métier</span> ?
+              Ce que NewCo Intel fait pour{" "}
+              <span className="italic" style={{ color: vConfig.color }}>vous</span>.
             </h2>
           </div>
 
@@ -286,16 +381,69 @@ export default function VerticalLanding({ slug }: { slug: string }) {
         </div>
       </section>
 
+      {/* ── Testimonial + ROI ──────────────────── */}
+      <section className="py-24">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+            {/* Testimonial */}
+            <div className="card p-8">
+              <Quote className="mb-4 h-6 w-6" style={{ color: `${vConfig.color}33` }} />
+              <p className="text-[16px] leading-relaxed text-sub italic">
+                "{content.testimonial.quote}"
+              </p>
+              <div className="mt-6 flex items-center gap-3 border-t border-border pt-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full text-[14px] font-bold text-white" style={{ background: vConfig.color }}>
+                  {content.testimonial.name[0]}
+                </div>
+                <div>
+                  <p className="text-[14px] font-semibold text-heading">{content.testimonial.name}</p>
+                  <p className="text-[12px] text-muted">{content.testimonial.role}, {content.testimonial.company}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ROI card */}
+            <div className="card overflow-hidden">
+              <div className="p-8">
+                <p className="mb-3 text-[13px] font-semibold uppercase tracking-widest" style={{ color: vConfig.color }}>
+                  Le calcul est simple
+                </p>
+                <h3 className="font-display text-[1.6rem] leading-tight text-heading">
+                  {content.roiExample.payback}.
+                </h3>
+                <div className="mt-6 space-y-4">
+                  <div className="flex items-center justify-between rounded-xl bg-surface p-4">
+                    <span className="text-[14px] text-muted">Abonnement Pro</span>
+                    <span className="font-mono text-lg font-bold text-heading">499€/mois</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl p-4" style={{ background: `${vConfig.color}08` }}>
+                    <div>
+                      <span className="text-[14px] text-heading font-medium">{content.roiExample.label}</span>
+                    </div>
+                    <span className="font-mono text-lg font-bold" style={{ color: vConfig.color }}>{content.roiExample.revenue}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-border bg-bg/50 px-8 py-4">
+                <p className="text-[13px] text-muted">
+                  <span className="font-semibold text-heading">180+ professionnels</span> utilisent déjà NewCo Intel en France.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Dashboard preview ─────────────────── */}
       <section className="bg-bg py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="mb-2 text-[13px] font-semibold uppercase tracking-widest" style={{ color: vConfig.color }}>
-                Aperçu dashboard
+                Aperçu de votre dashboard
               </p>
               <h2 className="font-display text-[2rem] text-heading">
-                Leads {vConfig.label} du jour
+                Voici ce que vous recevez chaque matin.
               </h2>
             </div>
             <Link
@@ -303,7 +451,7 @@ export default function VerticalLanding({ slug }: { slug: string }) {
               className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-[13px] font-semibold text-heading transition-all hover:border-heading hover:shadow-sm"
             >
               <Download className="h-4 w-4" />
-              Dashboard complet
+              Voir le dashboard complet
             </Link>
           </div>
 
@@ -343,15 +491,10 @@ export default function VerticalLanding({ slug }: { slug: string }) {
                 className="anim-fade-up card-interactive group flex items-center gap-4 p-5"
                 style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}
               >
-                {/* Left accent */}
                 <div className="hidden h-10 w-1 flex-shrink-0 rounded-full sm:block" style={{ background: vConfig.color }} />
-
-                {/* Score */}
                 <div className="flex-shrink-0">
                   <ScoreBadge score={lead.aiScore} size="sm" />
                 </div>
-
-                {/* Info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="truncate text-[15px] font-semibold text-heading group-hover:text-accent">
@@ -365,8 +508,6 @@ export default function VerticalLanding({ slug }: { slug: string }) {
                     <span>{relativeDate(lead.bodaccDate)}</span>
                   </div>
                 </div>
-
-                {/* Tags */}
                 <div className="hidden flex-wrap gap-1.5 lg:flex">
                   {lead.tags.slice(0, 2).map((tag) => (
                     <span key={tag} className="rounded-lg border border-border px-2 py-0.5 text-[11px] text-muted">
@@ -374,8 +515,6 @@ export default function VerticalLanding({ slug }: { slug: string }) {
                     </span>
                   ))}
                 </div>
-
-                {/* Contact */}
                 <div className="hidden flex-shrink-0 text-right md:block">
                   {lead.contact ? (
                     <div className="text-[12px]">
@@ -390,7 +529,6 @@ export default function VerticalLanding({ slug }: { slug: string }) {
             ))}
           </div>
 
-          {/* Load more */}
           {filteredLeads.length > visibleCount && (
             <div className="mt-6 text-center">
               <button
@@ -409,11 +547,11 @@ export default function VerticalLanding({ slug }: { slug: string }) {
       <section className="relative overflow-hidden py-28" style={{ background: `linear-gradient(135deg, ${vConfig.color}, ${vConfig.color}bb)` }}>
         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
         <div className="relative z-10 mx-auto max-w-3xl px-4 text-center">
-          <h2 className="font-display text-[2.5rem] text-white sm:text-[3.5rem] leading-[1.1]">
+          <h2 className="font-display text-[2.2rem] text-white sm:text-[3rem] leading-[1.1]">
             {content.ctaFinal}
           </h2>
           <p className="mx-auto mt-5 max-w-md text-[17px] leading-relaxed text-white/60">
-            14 jours gratuits. Sans carte bancaire. Leads qualifiés dès demain matin.
+            Inscription en 5 minutes. Sans carte bancaire. Premiers leads qualifiés dès demain matin.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
@@ -423,10 +561,10 @@ export default function VerticalLanding({ slug }: { slug: string }) {
               Démarrer l'essai gratuit
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link to="/" className="text-[15px] font-medium text-white/60 transition-colors hover:text-white">
-              Retour à l'accueil
-            </Link>
           </div>
+          <p className="mt-6 text-[13px] text-white/30">
+            180+ professionnels nous font confiance en France
+          </p>
         </div>
       </section>
 
