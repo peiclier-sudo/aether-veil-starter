@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -41,6 +41,8 @@ const conversionFunnel = [
 ];
 
 export default function Analytics() {
+  useEffect(() => { document.title = "Analytics — NewCo Intel"; }, []);
+
   const chartData = mockDailyStats.slice(-14).map((d) => ({
     date: d.date.slice(5),
     Créations: d.totalCreations,
