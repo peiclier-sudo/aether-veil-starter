@@ -37,7 +37,7 @@ export default function Settings() {
     <div className="page-in mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
         <p className="text-[12px] font-semibold uppercase tracking-wider text-accent">Configuration</p>
-        <h1 className="mt-1 font-display text-3xl text-heading">Paramètres</h1>
+        <h1 className="mt-1 font-display text-[2rem] text-heading">Paramètres</h1>
       </div>
 
       <div className="space-y-5">
@@ -115,7 +115,7 @@ export default function Settings() {
               { key: "dailyDigest" as const, label: "Digest", desc: "Résumé quotidien à 8h" },
               { key: "webhook" as const, label: "Webhook", desc: "Push temps réel vers votre endpoint" },
             ].map((item) => (
-              <div key={item.key} className="flex items-center justify-between rounded-lg bg-surface p-4">
+              <div key={item.key} className="flex items-center justify-between rounded-xl bg-surface p-4">
                 <div>
                   <p className="text-[14px] font-medium text-heading">{item.label}</p>
                   <p className="text-[12px] text-muted">{item.desc}</p>
@@ -147,7 +147,7 @@ export default function Settings() {
               <label className="mb-1.5 block text-[12px] font-medium text-muted">Clé API</label>
               <div className="flex gap-2">
                 <input type="password" defaultValue="nci_live_xxxxxxxxxxxxxxxxxxxxxxxx" readOnly className="flex-1 font-mono !bg-surface !text-muted" />
-                <button className="rounded-lg border border-border px-4 py-2 text-[13px] font-semibold text-heading transition-all hover:border-accent hover:text-accent">
+                <button className="rounded-xl border border-border px-4 py-2 text-[13px] font-semibold text-heading transition-all hover:border-accent hover:text-accent">
                   Copier
                 </button>
               </div>
@@ -165,7 +165,7 @@ export default function Settings() {
         <div className="flex justify-end">
           <button
             onClick={handleSave}
-            className={`flex items-center gap-2 rounded-lg px-6 py-2.5 text-[14px] font-semibold shadow-sm transition-all ${
+            className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-[14px] font-semibold shadow-sm transition-all ${
               saved
                 ? "bg-score-high text-white"
                 : "bg-accent text-white hover:bg-accent-dim"

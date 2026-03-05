@@ -53,7 +53,7 @@ export default function LeadDetail() {
     <div className="page-in mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <Link
         to="/dashboard"
-        className="mb-6 inline-flex items-center gap-2 text-[13px] text-muted transition-colors hover:text-accent"
+        className="mb-6 inline-flex items-center gap-2 text-[13px] font-medium text-muted transition-colors hover:text-accent"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Retour au dashboard
@@ -61,16 +61,16 @@ export default function LeadDetail() {
 
       {/* Header */}
       <div className="card mb-6 overflow-hidden">
-        <div className="h-1" style={{ background: vColor }} />
+        <div className="h-1" style={{ background: `linear-gradient(90deg, ${vColor}, ${vColor}88)` }} />
         <div className="p-6 sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="mb-3 flex flex-wrap items-center gap-3">
-                <h1 className="font-display text-2xl text-heading">
+                <h1 className="font-display text-[1.75rem] text-heading">
                   {lead.companyName}
                 </h1>
                 <span
-                  className="rounded-md border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
+                  className="rounded-lg border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
                   style={{ borderColor: vColor, color: vColor }}
                 >
                   {lead.verticalLabel}
@@ -83,7 +83,7 @@ export default function LeadDetail() {
               </div>
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {lead.tags.map((tag) => (
-                  <span key={tag} className="rounded-md border border-border px-2.5 py-0.5 text-[11px] text-muted">
+                  <span key={tag} className="rounded-lg border border-border px-2.5 py-0.5 text-[11px] text-muted">
                     {tag}
                   </span>
                 ))}
@@ -106,7 +106,7 @@ export default function LeadDetail() {
             <p className="relative text-[15px] italic leading-relaxed text-sub">
               « {lead.outreachAngle} »
             </p>
-            <button className="relative mt-4 inline-flex items-center gap-1.5 rounded-lg border border-accent/30 px-3.5 py-2 text-[13px] font-medium text-accent transition-colors hover:bg-accent/[0.06]">
+            <button className="relative mt-4 inline-flex items-center gap-1.5 rounded-xl border border-accent/30 px-4 py-2 text-[13px] font-medium text-accent transition-all hover:bg-accent/[0.06]">
               <Copy className="h-3.5 w-3.5" />
               Copier
             </button>
@@ -168,7 +168,7 @@ export default function LeadDetail() {
                 {lead.enrichment.socialPresence.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {lead.enrichment.socialPresence.map((s) => (
-                      <span key={s} className="rounded-md border border-border px-2.5 py-1 text-[11px] text-sub">{s}</span>
+                      <span key={s} className="rounded-lg border border-border px-2.5 py-1 text-[11px] text-sub">{s}</span>
                     ))}
                   </div>
                 ) : (
@@ -209,12 +209,12 @@ export default function LeadDetail() {
                     </div>
                   )}
                 </div>
-                <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent py-2.5 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-accent-dim">
+                <button className="btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-[13px]">
                   <ExternalLink className="h-3.5 w-3.5" /> Ouvrir dans le CRM
                 </button>
               </div>
             ) : (
-              <div className="card-raised rounded-lg p-5 text-center">
+              <div className="card-raised p-5 text-center">
                 <Users className="mx-auto mb-2 h-5 w-5 text-raised" />
                 <p className="text-sm text-muted">Non enrichi</p>
                 <button className="mt-2 text-[13px] font-medium text-accent hover:underline">Enrichir</button>

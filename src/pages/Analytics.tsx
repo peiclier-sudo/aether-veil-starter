@@ -84,7 +84,7 @@ export default function Analytics() {
     <div className="page-in mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
         <p className="text-[12px] font-semibold uppercase tracking-wider text-accent">Analytics</p>
-        <h1 className="mt-1 font-display text-3xl text-heading">
+        <h1 className="mt-1 font-display text-[2rem] text-heading">
           Vue d'ensemble
         </h1>
         <p className="mt-1 text-[13px] text-muted">14 derniers jours</p>
@@ -200,7 +200,7 @@ export default function Analytics() {
           </h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {regionData.map((r, i) => (
-              <div key={r.region} className="group relative overflow-hidden rounded-lg bg-surface p-3.5">
+              <div key={r.region} className="group relative overflow-hidden rounded-xl bg-surface p-3.5">
                 <div
                   className="absolute inset-y-0 left-0 bg-accent/[0.06] transition-all group-hover:bg-accent/[0.1]"
                   style={{ width: `${(r.count / maxRegion) * 100}%` }}
@@ -210,7 +210,7 @@ export default function Analytics() {
                     <span className={`flex h-6 w-6 items-center justify-center rounded-md font-mono text-[11px] font-bold ${
                       i < 3 ? "bg-accent text-white" : "bg-raised text-muted"
                     }`}>
-                      {i + 1}
+                      {String(i + 1)}
                     </span>
                     <span className="text-[14px] font-medium text-heading">{r.region}</span>
                   </div>
