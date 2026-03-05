@@ -38,7 +38,7 @@ interface EnrichmentResult {
 
 /**
  * Fetch company data from INSEE Sirene API
- * Free tier: 30 requests/min, needs a token from https://api.insee.fr
+ * Free tier: needs a token from https://portail-api.insee.fr (register → create app → subscribe to API Sirene)
  */
 export async function enrichFromInsee(
   siren: string,

@@ -39,7 +39,7 @@ export interface BodaccLead {
 }
 
 const BASE_URL =
-  "https://bodacc-datadila.opendatasoft.com/api/records/1.0/search";
+  "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records";
 
 const REGION_MAP: Record<string, string> = {
   "75": "Île-de-France", "77": "Île-de-France", "78": "Île-de-France",
@@ -116,20 +116,11 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
   let hasMore = true;
 
   while (hasMore) {
-    const params = new URLSearchParams({
-      dataset: "annonces-commerciales",
-      q: "",
-      rows: String(limit),
-      start: String(offset),
-      sort: "dateparution",
-      refine: [
-        `dateparution:${date}`,
-        "publicationavis:Immatriculation",
-      ].join("&refine="),
-    });
-
-    // Build URL manually since refine needs special handling
-    const url = `${BASE_URL}?dataset=annonces-commerciales&rows=${limit}&start=${offset}&sort=dateparution&refine.dateparution=${date}&refine.publicationavis=Immatriculation`;
+    // V2.1 API with SQL-like where clause
+    const where = encodeURIComponent(
+      `dateparution='${date}' AND familleavis_lib='Immatriculation'`
+    );
+    const url = `${BASE_URL}?where=${where}&limit=${limit}&offset=${offset}&order_by=dateparution%20DESC`;
 
     const res = await fetch(url);
     if (!res.ok) {
@@ -137,27 +128,25 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
     }
 
     const data = await res.json();
-    const records = data.records || [];
+    const records = data.results || [];
 
     for (const record of records) {
-      const fields = record.fields || {};
-
-      const companyName = fields.denomination || fields.commercant || "";
+      const companyName = record.denomination || record.commercant || "";
       if (!companyName) continue;
 
-      const postalCode = fields.cp || "";
-      const siren = extractSiren(fields.registre);
+      const postalCode = record.cp || record.numerodepartement || "";
+      const siren = extractSiren(record.registre);
 
       allLeads.push({
-        bodaccId: record.recordid || `bodacc-${offset}`,
+        bodaccId: record.id || `bodacc-${offset}`,
         companyName: companyName.trim(),
-        legalForm: fields.formejuridique || "",
-        capital: parseCapital(fields.montantcapital),
-        activity: fields.activite || "",
-        city: fields.ville || "",
+        legalForm: record.formejuridique || "",
+        capital: parseCapital(record.montantcapital),
+        activity: record.activite || "",
+        city: record.ville || "",
         postalCode,
         region: getRegion(postalCode),
-        address: fields.adresse || "",
+        address: record.adresse || "",
         bodaccDate: date,
         siren,
       });
