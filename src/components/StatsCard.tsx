@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { TrendingUp } from "lucide-react";
 
 interface StatsCardProps {
   label: string;
@@ -9,39 +8,26 @@ interface StatsCardProps {
   color: string;
 }
 
-export default function StatsCard({
-  label,
-  value,
-  change,
-  icon,
-  color,
-}: StatsCardProps) {
+export default function StatsCard({ label, value, change, icon, color }: StatsCardProps) {
   return (
-    <div className="surface-elevated group relative overflow-hidden rounded-2xl p-5">
-      {/* Subtle gradient accent */}
-      <div
-        className="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-[0.06] transition-opacity group-hover:opacity-[0.1]"
-        style={{ background: `radial-gradient(circle, ${color}, transparent)` }}
-      />
-
+    <div className="card group overflow-hidden rounded-none p-4">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
             {label}
           </p>
-          <p className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">
+          <p className="mt-2 font-display text-2xl font-extrabold text-heading">
             {value}
           </p>
           {change && (
-            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
-              <TrendingUp className="h-3 w-3" />
+            <p className="mt-1 font-mono text-[11px] font-medium text-lime">
               {change}
             </p>
           )}
         </div>
         <div
-          className="flex h-11 w-11 items-center justify-center rounded-xl"
-          style={{ backgroundColor: `${color}12`, color }}
+          className="flex h-9 w-9 items-center justify-center rounded-none opacity-50 transition-opacity group-hover:opacity-100"
+          style={{ color }}
         >
           {icon}
         </div>

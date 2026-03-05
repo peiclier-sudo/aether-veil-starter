@@ -12,10 +12,7 @@ import {
 import { verticals } from "@/lib/mock-data";
 
 export default function Settings() {
-  const [activeVerticals, setActiveVerticals] = useState<string[]>([
-    "agence-web",
-    "expert-comptable",
-  ]);
+  const [activeVerticals, setActiveVerticals] = useState<string[]>(["agence-web", "expert-comptable"]);
   const [notifications, setNotifications] = useState({
     email: true,
     webhook: false,
@@ -34,83 +31,50 @@ export default function Settings() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const verticalIcons: Record<string, typeof Globe> = {
-    Globe,
-    Calculator,
-    Shield,
-  };
+  const verticalIcons: Record<string, typeof Globe> = { Globe, Calculator, Shield };
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="page-in mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Configurez vos verticales et préférences de notification
-        </p>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-lime">03 / Config</p>
+        <h1 className="mt-1 font-display text-2xl font-extrabold text-heading">Paramètres</h1>
       </div>
 
-      <div className="space-y-6">
-        {/* Profil */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-            <User className="h-5 w-5 text-gray-400" />
-            Profil
+      <div className="space-y-4">
+        {/* Profile */}
+        <div className="card rounded-none p-6">
+          <h2 className="mb-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            <User className="h-3.5 w-3.5" /> Profil
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Prénom
-              </label>
-              <input
-                type="text"
-                defaultValue="Pierre"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-              />
+              <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-wider text-muted">Prénom</label>
+              <input type="text" defaultValue="Pierre" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Nom
-              </label>
-              <input
-                type="text"
-                defaultValue="Durand"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-              />
+              <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-wider text-muted">Nom</label>
+              <input type="text" defaultValue="Durand" />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                type="email"
-                defaultValue="pierre.durand@agence-web.fr"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-              />
+              <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-wider text-muted">Email</label>
+              <input type="email" defaultValue="pierre.durand@agence-web.fr" className="w-full" />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Entreprise
-              </label>
-              <input
-                type="text"
-                defaultValue="WebForce Digital"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-              />
+              <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-wider text-muted">Entreprise</label>
+              <input type="text" defaultValue="WebForce Digital" className="w-full" />
             </div>
           </div>
         </div>
 
-        {/* Verticales */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-            <Globe className="h-5 w-5 text-gray-400" />
-            Verticales actives
+        {/* Verticals */}
+        <div className="card rounded-none p-6">
+          <h2 className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            <Globe className="h-3.5 w-3.5" /> Verticales actives
           </h2>
-          <p className="mb-4 text-sm text-gray-500">
-            Sélectionnez les profils d'acheteurs B2B pour lesquels vous souhaitez
-            recevoir des leads qualifiés.
+          <p className="mb-5 text-[13px] text-sub">
+            Profils d'acheteurs B2B pour lesquels vous recevez des leads.
           </p>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {verticals.map((v) => {
               const Icon = verticalIcons[v.icon] || Globe;
               const isActive = activeVerticals.includes(v.id);
@@ -118,35 +82,21 @@ export default function Settings() {
                 <button
                   key={v.id}
                   onClick={() => toggleVertical(v.id)}
-                  className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all ${
-                    isActive
-                      ? "border-primary-300 bg-primary-50 ring-1 ring-primary-200"
-                      : "border-gray-200 bg-white hover:bg-gray-50"
+                  className={`card-interactive flex w-full items-center gap-4 rounded-none p-4 text-left ${
+                    isActive ? "!border-lime/30 !bg-lime-soft" : ""
                   }`}
                 >
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-lg"
-                    style={{
-                      backgroundColor: `${v.color}15`,
-                      color: v.color,
-                    }}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </div>
+                  <Icon className="h-5 w-5" style={{ color: v.color }} />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {v.label}
-                    </p>
-                    <p className="text-xs text-gray-500">{v.description}</p>
+                    <p className="text-[13px] font-bold text-heading">{v.label}</p>
+                    <p className="text-[11px] text-muted">{v.description}</p>
                   </div>
                   <div
-                    className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
-                      isActive
-                        ? "bg-primary-600 text-white"
-                        : "border-2 border-gray-300"
+                    className={`flex h-5 w-5 items-center justify-center transition-colors ${
+                      isActive ? "bg-lime text-void" : "border border-border"
                     }`}
                   >
-                    {isActive && <Check className="h-3.5 w-3.5" />}
+                    {isActive && <Check className="h-3 w-3" />}
                   </div>
                 </button>
               );
@@ -155,55 +105,30 @@ export default function Settings() {
         </div>
 
         {/* Notifications */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-            <Bell className="h-5 w-5 text-gray-400" />
-            Notifications
+        <div className="card rounded-none p-6">
+          <h2 className="mb-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            <Bell className="h-3.5 w-3.5" /> Notifications
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
-              {
-                key: "email" as const,
-                label: "Notification email",
-                desc: "Recevez un email chaque matin avec vos nouveaux leads",
-              },
-              {
-                key: "dailyDigest" as const,
-                label: "Digest quotidien",
-                desc: "Résumé quotidien des leads à 8h",
-              },
-              {
-                key: "webhook" as const,
-                label: "Webhook",
-                desc: "Envoi temps réel vers votre endpoint",
-              },
+              { key: "email" as const, label: "Email", desc: "Un email chaque matin avec vos leads" },
+              { key: "dailyDigest" as const, label: "Digest", desc: "Résumé quotidien à 8h" },
+              { key: "webhook" as const, label: "Webhook", desc: "Push temps réel vers votre endpoint" },
             ].map((item) => (
-              <div
-                key={item.key}
-                className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3"
-              >
+              <div key={item.key} className="flex items-center justify-between bg-slab p-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    {item.label}
-                  </p>
-                  <p className="text-xs text-gray-500">{item.desc}</p>
+                  <p className="text-[13px] font-medium text-heading">{item.label}</p>
+                  <p className="text-[11px] text-muted">{item.desc}</p>
                 </div>
                 <button
-                  onClick={() =>
-                    setNotifications((prev) => ({
-                      ...prev,
-                      [item.key]: !prev[item.key],
-                    }))
-                  }
-                  className={`relative h-6 w-11 rounded-full transition-colors ${
-                    notifications[item.key] ? "bg-primary-600" : "bg-gray-300"
+                  onClick={() => setNotifications((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
+                  className={`relative h-6 w-11 transition-colors ${
+                    notifications[item.key] ? "bg-lime" : "bg-border"
                   }`}
                 >
                   <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                      notifications[item.key]
-                        ? "left-[22px]"
-                        : "left-0.5"
+                    className={`absolute top-0.5 h-5 w-5 bg-void transition-transform ${
+                      notifications[item.key] ? "left-[22px]" : "left-0.5"
                     }`}
                   />
                 </button>
@@ -213,38 +138,25 @@ export default function Settings() {
         </div>
 
         {/* API */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-            <Key className="h-5 w-5 text-gray-400" />
-            API & Intégrations
+        <div className="card rounded-none p-6">
+          <h2 className="mb-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            <Key className="h-3.5 w-3.5" /> API & Intégrations
           </h2>
           <div className="space-y-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Clé API
-              </label>
+              <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-wider text-muted">Clé API</label>
               <div className="flex gap-2">
-                <input
-                  type="password"
-                  defaultValue="nci_live_xxxxxxxxxxxxxxxxxxxxxxxx"
-                  readOnly
-                  className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-500"
-                />
-                <button className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
-                  Copier
+                <input type="password" defaultValue="nci_live_xxxxxxxxxxxxxxxxxxxxxxxx" readOnly className="flex-1 font-mono !bg-surface !text-muted" />
+                <button className="border border-border px-3 py-2 font-mono text-[11px] font-bold text-heading hover:border-lime hover:text-lime">
+                  COPIER
                 </button>
               </div>
             </div>
             <div>
-              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Webhook className="h-4 w-4" />
-                URL Webhook
+              <label className="mb-1.5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-muted">
+                <Webhook className="h-3 w-3" /> URL Webhook
               </label>
-              <input
-                type="url"
-                placeholder="https://votre-api.com/webhook/newco"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-              />
+              <input type="url" placeholder="https://votre-api.com/webhook/newco" className="w-full" />
             </div>
           </div>
         </div>
@@ -253,15 +165,16 @@ export default function Settings() {
         <div className="flex justify-end">
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
+            className={`flex items-center gap-2 px-6 py-2.5 font-mono text-[12px] font-bold transition-all ${
+              saved
+                ? "bg-score-high text-void"
+                : "bg-lime text-void hover:bg-lime-dim"
+            }`}
           >
             {saved ? (
-              <>
-                <Check className="h-4 w-4" />
-                Sauvegardé
-              </>
+              <><Check className="h-4 w-4" />SAUVEGARDÉ</>
             ) : (
-              "Sauvegarder"
+              "SAUVEGARDER"
             )}
           </button>
         </div>

@@ -1,301 +1,302 @@
 import { Link } from "react-router-dom";
 import {
-  Zap,
-  Target,
-  Brain,
-  Users,
   ArrowRight,
+  ArrowUpRight,
   Check,
   Globe,
   Calculator,
   Shield,
+  Database,
+  Brain,
+  Users,
+  Target,
   Clock,
   TrendingUp,
-  Database,
   Mail,
-  Sparkles,
-  BarChart3,
-  Webhook,
 } from "lucide-react";
-import { pricingPlans, verticals } from "@/lib/mock-data";
+import { pricingPlans, verticals, mockLeads } from "@/lib/mock-data";
 import { formatCurrency } from "@/lib/utils";
 
 const features = [
-  {
-    icon: Database,
-    title: "Flux BODACC quotidien",
-    description:
-      "Ingestion automatique des 300-800 créations quotidiennes. Données structurées, prêtes à l'emploi.",
-    accent: "from-blue-500 to-indigo-600",
-  },
-  {
-    icon: Brain,
-    title: "Score IA DeepSeek V3",
-    description:
-      "Score 0-100 personnalisé par verticale. Priorisez vos efforts sur les prospects les plus pertinents.",
-    accent: "from-violet-500 to-purple-600",
-  },
-  {
-    icon: Users,
-    title: "Enrichissement contact",
-    description:
-      "4 sources combinées : Societeinfo, Dropcontact, API-Datastore, DNS scraping. 65% de couverture.",
-    accent: "from-emerald-500 to-teal-600",
-  },
-  {
-    icon: Target,
-    title: "Angle d'accroche IA",
-    description:
-      "Message d'approche unique pour chaque lead, adapté à votre verticale et au profil de l'entreprise.",
-    accent: "from-amber-500 to-orange-600",
-  },
-  {
-    icon: Clock,
-    title: "Livraison à 8h",
-    description:
-      "Vos 12-15 leads qualifiés livrés chaque matin. Email récapitulatif + dashboard temps réel.",
-    accent: "from-pink-500 to-rose-600",
-  },
-  {
-    icon: TrendingUp,
-    title: "Multi-verticale",
-    description:
-      "Ajout d'un nouveau vertical en 1 semaine. Même infra, prompt dédié, segment marketing personnalisé.",
-    accent: "from-cyan-500 to-blue-600",
-  },
-];
-
-const metrics = [
-  { value: "800", suffix: "/j", label: "Créations BODACC" },
-  { value: "87", suffix: "%", label: "Précision scoring" },
-  { value: "2", suffix: "min", label: "Par fiche qualifiée" },
-  { value: "0,10", suffix: "€", label: "Coût par fiche" },
+  { icon: Database, title: "Flux BODACC quotidien", desc: "Ingestion automatique des 300-800 créations. Structurées, prêtes, fraîches.", num: "01" },
+  { icon: Brain, title: "Score IA DeepSeek V3", desc: "Score 0-100 personnalisé par verticale. ~500 tokens, ~0,02€ par fiche.", num: "02" },
+  { icon: Users, title: "Enrichissement 4 sources", desc: "Societeinfo + Dropcontact + API-Datastore + DNS scraping combinés.", num: "03" },
+  { icon: Target, title: "Angle d'accroche IA", desc: "Message unique par lead. Adapté à votre verticale et au profil.", num: "04" },
+  { icon: Clock, title: "Livraison à 8h", desc: "12-15 leads qualifiés chaque matin. Email récap + dashboard temps réel.", num: "05" },
+  { icon: TrendingUp, title: "Multi-verticale", desc: "Nouveau vertical en 1 semaine. Même infra, prompt dédié.", num: "06" },
 ];
 
 const verticalIcons = { Globe, Calculator, Shield };
 
+// Sample companies for the ticker
+const tickerCompanies = mockLeads.slice(0, 16).map((l) => ({
+  name: l.companyName,
+  city: l.city,
+  score: l.aiScore,
+}));
+
 export default function Landing() {
   return (
-    <div className="bg-white">
-      {/* ── HERO ── dark, immersive ──────────────────────── */}
-      <section className="hero-gradient grain relative overflow-hidden">
-        {/* Floating orbs */}
-        <div className="absolute left-[10%] top-[20%] h-72 w-72 rounded-full bg-primary-500/20 blur-[100px] animate-float" />
-        <div className="absolute right-[15%] bottom-[10%] h-96 w-96 rounded-full bg-accent-500/15 blur-[120px] animate-float" style={{ animationDelay: "3s" }} />
-        <div className="absolute left-[50%] top-[60%] h-48 w-48 rounded-full bg-warning-500/10 blur-[80px] animate-float" style={{ animationDelay: "1.5s" }} />
+    <div className="bg-void">
+      {/* ═══ HERO ═══ asymmetric, left-heavy ══════════ */}
+      <section className="noise relative overflow-hidden">
+        {/* Gradient accents */}
+        <div className="absolute -left-32 top-0 h-[500px] w-[500px] rounded-full bg-lime/5 blur-[150px]" />
+        <div className="absolute right-0 top-1/2 h-[300px] w-[400px] bg-lime/3 blur-[120px]" />
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 pb-24 pt-32 sm:px-6 sm:pb-32 sm:pt-40 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            {/* Badge */}
-            <div className="animate-fade-up mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-primary-300 backdrop-blur-sm">
-              <Sparkles className="h-4 w-4" />
-              Qualification automatique de leads B2B
+        <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-24 sm:px-6 sm:pt-32 lg:px-8">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8">
+            {/* Left — oversized type */}
+            <div className="lg:col-span-7">
+              {/* Status line */}
+              <div className="anim-fade-up mb-8 flex items-center gap-3 font-mono text-xs text-muted">
+                <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-lime" />
+                <span>PIPELINE ACTIF</span>
+                <span className="text-border">|</span>
+                <span>{mockLeads.length} leads en base</span>
+              </div>
+
+              <h1 className="anim-fade-up d1 font-display text-[clamp(2.5rem,6vw,4.5rem)] font-extrabold leading-[0.95] tracking-tight text-heading">
+                Du flux{" "}
+                <span className="font-mono text-lime">BODACC</span>
+                <br />
+                au pipeline
+                <br />
+                commercial.
+              </h1>
+
+              <p className="anim-fade-up d2 mt-6 max-w-lg text-base leading-relaxed text-sub">
+                <span className="text-heading font-medium">800 créations/jour</span> passées au crible par IA.{" "}
+                <span className="text-heading font-medium">12 fiches qualifiées</span> livrées à 8h avec score, angle
+                d'accroche et contacts enrichis.
+              </p>
+
+              {/* CTA row */}
+              <div className="anim-fade-up d3 mt-10 flex flex-wrap items-center gap-4">
+                <Link
+                  to="/dashboard"
+                  className="group flex items-center gap-2 bg-lime px-6 py-3 text-sm font-bold text-void transition-all hover:bg-lime-dim"
+                >
+                  VOIR LE DASHBOARD
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <a
+                  href="#pricing"
+                  className="flex items-center gap-2 border border-border px-6 py-3 text-sm font-medium text-sub transition-colors hover:border-heading hover:text-heading"
+                >
+                  TARIFS
+                </a>
+              </div>
+
+              {/* Trust */}
+              <div className="anim-fade-up d4 mt-8 flex flex-wrap gap-6 font-mono text-[11px] text-muted">
+                {["14j gratuits", "Sans engagement", "Setup 5 min"].map((t) => (
+                  <span key={t} className="flex items-center gap-1.5">
+                    <Check className="h-3 w-3 text-lime" />
+                    {t}
+                  </span>
+                ))}
+              </div>
             </div>
 
-            {/* Headline */}
-            <h1 className="animate-fade-up stagger-1 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl lg:leading-[1.1]">
-              Ne vendez plus des données.{" "}
-              <span className="bg-gradient-to-r from-primary-400 via-primary-300 to-accent-400 bg-clip-text text-transparent">
-                Vendez du temps commercial.
-              </span>
-            </h1>
-
-            {/* Subtitle */}
-            <p className="animate-fade-up stagger-2 mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-400">
-              NewCo Intel transforme les{" "}
-              <span className="font-medium text-white">800 créations BODACC quotidiennes</span>{" "}
-              en{" "}
-              <span className="font-medium text-white">12 fiches leads qualifiées</span>{" "}
-              avec score IA, angle d'accroche et contacts enrichis — livrées chaque matin à 8h.
-            </p>
-
-            {/* CTAs */}
-            <div className="animate-fade-up stagger-3 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                to="/dashboard"
-                className="group inline-flex items-center gap-2.5 rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-gray-900 shadow-2xl shadow-white/10 transition-all hover:shadow-white/20"
-              >
-                Voir le dashboard
-                <ArrowRight className="h-4.5 w-4.5 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <a
-                href="#pricing"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-8 py-3.5 text-base font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10"
-              >
-                Voir les tarifs
-              </a>
-            </div>
-
-            {/* Trust line */}
-            <div className="animate-fade-up stagger-4 mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
-              {["14 jours gratuits", "Sans engagement", "Setup en 5 min"].map((t) => (
-                <span key={t} className="flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5 text-accent-400" />
-                  {t}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Metrics bar ───────────────────── */}
-          <div className="animate-fade-up stagger-5 mx-auto mt-16 max-w-3xl">
-            <div className="glass-dark grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 md:grid-cols-4">
-              {metrics.map((m) => (
-                <div key={m.label} className="px-6 py-5 text-center">
-                  <div className="text-2xl font-extrabold text-white">
-                    {m.value}
-                    <span className="ml-0.5 text-base font-semibold text-primary-400">
-                      {m.suffix}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-xs font-medium text-gray-500">
-                    {m.label}
-                  </div>
+            {/* Right — data panel */}
+            <div className="anim-slide-left d3 lg:col-span-5">
+              <div className="card overflow-hidden rounded-none">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+                  <span className="font-mono text-[10px] text-muted">LIVE FEED</span>
+                  <span className="flex items-center gap-1.5 font-mono text-[10px] text-lime">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-lime" />
+                    STREAMING
+                  </span>
                 </div>
-              ))}
+                {/* Mini lead rows */}
+                <div className="divide-y divide-border-subtle">
+                  {mockLeads.slice(0, 6).map((lead) => (
+                    <div
+                      key={lead.id}
+                      className="flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-surface"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-medium text-heading">
+                          {lead.companyName}
+                        </p>
+                        <p className="font-mono text-[10px] text-muted">
+                          {lead.city} · {lead.legalForm}
+                        </p>
+                      </div>
+                      <div className="ml-3 flex items-center gap-2">
+                        <span
+                          className={`font-mono text-xs font-bold ${
+                            lead.aiScore >= 75
+                              ? "text-score-high"
+                              : lead.aiScore >= 50
+                                ? "text-score-mid"
+                                : "text-score-low"
+                          }`}
+                        >
+                          {lead.aiScore}
+                        </span>
+                        <div
+                          className="h-1 w-8 rounded-full"
+                          style={{
+                            background: `linear-gradient(90deg, ${
+                              lead.aiScore >= 75 ? "#22c55e" : lead.aiScore >= 50 ? "#eab308" : "#ef4444"
+                            } ${lead.aiScore}%, transparent ${lead.aiScore}%)`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Footer */}
+                <div className="border-t border-border-subtle px-4 py-2.5 text-center font-mono text-[10px] text-muted">
+                  +{mockLeads.length - 6} leads qualifiés aujourd'hui
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Bottom gradient fade */}
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent" />
       </section>
 
-      {/* ── PIPELINE ── visual steps ─────────────────── */}
-      <section className="relative py-20">
+      {/* ═══ METRICS BAR ═══ full width, stark ════════ */}
+      <section className="border-y border-border-subtle bg-slab">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-border-subtle md:grid-cols-4">
+          {[
+            { val: "800", unit: "/j", label: "Créations BODACC" },
+            { val: "87", unit: "%", label: "Précision scoring" },
+            { val: "0,02", unit: "€", label: "Coût IA / fiche" },
+            { val: "98", unit: "%", label: "Marge brute" },
+          ].map((m, i) => (
+            <div key={m.label} className={`anim-count-in d${i + 1} px-4 py-6 text-center sm:px-6`}>
+              <div className="font-display text-2xl font-extrabold text-heading sm:text-3xl">
+                {m.val}
+                <span className="text-lime">{m.unit}</span>
+              </div>
+              <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted">
+                {m.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ TICKER ═══ infinite scroll of company names */}
+      <section className="overflow-hidden border-b border-border-subtle bg-void py-3">
+        <div className="ticker-track">
+          {[...tickerCompanies, ...tickerCompanies].map((c, i) => (
+            <span key={i} className="flex items-center gap-2 px-6 text-[12px] text-muted whitespace-nowrap">
+              <span className="text-heading font-medium">{c.name}</span>
+              <span className="text-border">·</span>
+              <span>{c.city}</span>
+              <span className="text-border">·</span>
+              <span
+                className={`font-mono font-bold ${
+                  c.score >= 75 ? "text-score-high" : c.score >= 50 ? "text-score-mid" : "text-score-low"
+                }`}
+              >
+                {c.score}
+              </span>
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ PIPELINE ═══ numbered list, left-aligned ═ */}
+      <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-14 text-center">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-primary-600">
-              Comment ça marche
-            </p>
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Du BODACC à votre CRM en 4 étapes
+          <div className="mb-12">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-lime">Processus</p>
+            <h2 className="mt-2 font-display text-3xl font-extrabold text-heading sm:text-4xl">
+              4 étapes. Zéro effort.
             </h2>
           </div>
 
-          <div className="relative grid grid-cols-1 gap-0 md:grid-cols-4">
-            {/* Connector line (desktop) */}
-            <div className="absolute top-12 left-[12.5%] right-[12.5%] hidden h-px bg-gradient-to-r from-primary-200 via-primary-300 to-accent-300 md:block" />
-
+          <div className="grid grid-cols-1 gap-0 border-l border-border md:grid-cols-2">
             {[
-              { step: "1", title: "Ingestion BODACC", desc: "Collecte automatique des créations du jour via l'API officielle", icon: Database, color: "from-blue-500 to-indigo-600" },
-              { step: "2", title: "Scoring IA", desc: "DeepSeek V3 analyse et score 0-100 selon votre verticale", icon: Brain, color: "from-violet-500 to-purple-600" },
-              { step: "3", title: "Enrichissement", desc: "4 sources croisées pour trouver email, téléphone et profil", icon: Users, color: "from-emerald-500 to-teal-600" },
-              { step: "4", title: "Livraison 8h", desc: "Fiches qualifiées livrées dans votre dashboard ou webhook", icon: Mail, color: "from-amber-500 to-orange-600" },
+              { step: "01", title: "Ingestion BODACC", desc: "Collecte automatique des créations du jour via l'API officielle. 300-800 entreprises/jour.", icon: Database },
+              { step: "02", title: "Scoring IA", desc: "DeepSeek V3 analyse chaque entreprise. Score 0-100 calibré sur votre verticale.", icon: Brain },
+              { step: "03", title: "Enrichissement", desc: "4 sources croisées : Societeinfo, Dropcontact, API-Datastore, DNS scraping.", icon: Users },
+              { step: "04", title: "Livraison 8h", desc: "Fiches qualifiées dans votre dashboard ou webhook. Email récap optionnel.", icon: Mail },
             ].map((item, i) => (
-              <div key={item.step} className={`animate-fade-up stagger-${i + 1} relative flex flex-col items-center px-6 py-4 text-center`}>
-                {/* Step circle */}
-                <div className={`relative z-10 mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${item.color} text-white shadow-lg`}>
-                  <item.icon className="h-6 w-6" />
-                </div>
-                <span className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                  Étape {item.step}
-                </span>
-                <h3 className="mb-1.5 text-base font-bold text-gray-900">
+              <div
+                key={item.step}
+                className={`anim-fade-up d${i + 1} group relative border-b border-border py-8 pl-8 pr-6 transition-colors hover:bg-slab`}
+              >
+                {/* Left dot on the border line */}
+                <div className="absolute -left-[5px] top-10 h-2.5 w-2.5 border-2 border-lime bg-void transition-colors group-hover:bg-lime" />
+
+                <span className="font-mono text-xs text-muted">{item.step}</span>
+                <h3 className="mt-2 font-display text-lg font-bold text-heading">
                   {item.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-gray-500">{item.desc}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-sub">{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── BENTO FEATURES ── asymmetric grid ────────── */}
-      <section className="mesh-gradient relative py-20">
+      {/* ═══ FEATURES ═══ stacked list, alternating ═══ */}
+      <section className="border-y border-border-subtle bg-slab py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-14 text-center">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-primary-600">
-              Fonctionnalités
-            </p>
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Tout ce dont vous avez besoin
+          <div className="mb-12">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-lime">Capabilities</p>
+            <h2 className="mt-2 font-display text-3xl font-extrabold text-heading sm:text-4xl">
+              Ce qui est inclus.
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-gray-500">
-              De l'ingestion BODACC à l'angle d'accroche personnalisé, en passant par l'enrichissement multi-sources.
-            </p>
           </div>
 
-          {/* Bento grid — asymmetric */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
-            {features.map((f, i) => {
-              const spans = [
-                "md:col-span-4",
-                "md:col-span-2",
-                "md:col-span-2",
-                "md:col-span-4",
-                "md:col-span-3",
-                "md:col-span-3",
-              ];
-              return (
-                <div
-                  key={f.title}
-                  className={`${spans[i]} surface-interactive group rounded-2xl p-6 sm:p-8`}
-                >
-                  <div className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${f.accent} text-white shadow-sm`}>
-                    <f.icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-bold text-gray-900">
-                    {f.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-gray-500">
-                    {f.description}
-                  </p>
+          <div className="grid grid-cols-1 gap-px bg-border-subtle md:grid-cols-2 lg:grid-cols-3">
+            {features.map((f, i) => (
+              <div
+                key={f.num}
+                className={`anim-fade-up d${i + 1} group bg-slab p-6 transition-colors hover:bg-surface`}
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <f.icon className="h-5 w-5 text-muted transition-colors group-hover:text-lime" />
+                  <span className="font-mono text-[10px] text-border">{f.num}</span>
                 </div>
-              );
-            })}
+                <h3 className="mb-2 text-base font-bold text-heading">{f.title}</h3>
+                <p className="text-sm leading-relaxed text-sub">{f.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── VERTICALES ── ────────────────────────────── */}
+      {/* ═══ VERTICALS ═══ ════════════════════════════ */}
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-14 text-center">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-primary-600">
-              Multi-verticale
-            </p>
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Un prompt, un segment, un vertical
+          <div className="mb-12">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-lime">Segments</p>
+            <h2 className="mt-2 font-display text-3xl font-extrabold text-heading sm:text-4xl">
+              Un prompt. Un segment. Un vertical.
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-gray-500">
-              Même infrastructure, critères de qualification uniques par profil d'acheteur B2B.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {verticals.map((v, i) => {
               const Icon = verticalIcons[v.icon as keyof typeof verticalIcons] || Globe;
               return (
                 <div
                   key={v.id}
-                  className={`animate-fade-up stagger-${i + 1} group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-8 transition-all duration-300 hover:shadow-xl`}
+                  className={`anim-fade-up d${i + 1} group card-interactive overflow-hidden rounded-none p-6`}
                 >
-                  {/* Accent top bar */}
-                  <div
-                    className="absolute inset-x-0 top-0 h-1 transition-all duration-300 group-hover:h-1.5"
-                    style={{ background: v.color }}
-                  />
+                  {/* Top accent */}
+                  <div className="mb-5 h-px w-12 transition-all group-hover:w-20" style={{ background: v.color }} />
 
-                  <div
-                    className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl"
-                    style={{ backgroundColor: `${v.color}12`, color: v.color }}
-                  >
-                    <Icon className="h-7 w-7" />
+                  <div className="mb-4 flex items-center gap-3">
+                    <Icon className="h-5 w-5" style={{ color: v.color }} />
+                    <h3 className="font-display text-lg font-bold text-heading">{v.label}</h3>
                   </div>
 
-                  <h3 className="mb-2 text-xl font-bold text-gray-900">{v.label}</h3>
-                  <p className="mb-5 text-sm leading-relaxed text-gray-500">{v.description}</p>
+                  <p className="mb-5 text-sm text-sub">{v.description}</p>
 
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {v.criteria.map((c) => (
-                      <div key={c} className="flex items-center gap-2.5 text-sm text-gray-600">
-                        <div
-                          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full"
-                          style={{ backgroundColor: `${v.color}15` }}
-                        >
-                          <Check className="h-3 w-3" style={{ color: v.color }} />
-                        </div>
+                      <div key={c} className="flex items-start gap-2 text-[13px] text-muted">
+                        <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" style={{ color: v.color }} />
                         {c}
                       </div>
                     ))}
@@ -307,102 +308,52 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF BAR ── ──────────────────────── */}
-      <section className="border-y border-gray-100 bg-gray-50/80 py-12">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            {[
-              {
-                icon: BarChart3,
-                stat: "50-120",
-                label: "fiches qualifiées/jour",
-                detail: "sur l'ensemble des verticaux",
-              },
-              {
-                icon: Zap,
-                stat: "~0,02€",
-                label: "coût IA par scoring",
-                detail: "DeepSeek V3, ~500+200 tokens",
-              },
-              {
-                icon: Webhook,
-                stat: "98%",
-                label: "marge brute",
-                detail: "coût IA négligeable à l'échelle",
-              },
-            ].map((item) => (
-              <div key={item.label} className="flex items-start gap-4">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary-100 text-primary-600">
-                  <item.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-xl font-extrabold text-gray-900">{item.stat}</div>
-                  <div className="text-sm font-medium text-gray-600">{item.label}</div>
-                  <div className="text-xs text-gray-400">{item.detail}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PRICING ── ───────────────────────────────── */}
-      <section id="pricing" className="py-20">
+      {/* ═══ PRICING ═══ ══════════════════════════════ */}
+      <section id="pricing" className="border-y border-border-subtle bg-slab py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-14 text-center">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-primary-600">
-              Tarifs
-            </p>
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Simples, transparents, sans surprise
+          <div className="mb-12">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-lime">Tarifs</p>
+            <h2 className="mt-2 font-display text-3xl font-extrabold text-heading sm:text-4xl">
+              ROI dès le premier contrat.
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-gray-500">
-              ROI dès le premier contrat signé. 1 client = 800-3 000€/an de récurrent.
-            </p>
+            <p className="mt-3 text-sub">1 client signé = 800-3 000€/an de récurrent.</p>
           </div>
 
-          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-px bg-border-subtle md:grid-cols-3">
             {pricingPlans.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative overflow-hidden rounded-2xl border p-8 transition-all duration-300 ${
-                  plan.highlighted
-                    ? "scale-[1.02] border-primary-400 bg-white shadow-2xl shadow-primary-500/10 ring-1 ring-primary-400"
-                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-lg"
-                }`}
+                className={`relative bg-slab p-8 ${plan.highlighted ? "ring-1 ring-lime" : ""}`}
               >
                 {plan.highlighted && (
-                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-accent-500" />
+                  <div className="absolute inset-x-0 top-0 h-px bg-lime" />
                 )}
                 {plan.highlighted && (
-                  <div className="mb-4 inline-flex rounded-full bg-primary-100 px-3 py-1 text-xs font-bold text-primary-700">
-                    Le plus populaire
-                  </div>
+                  <span className="mb-3 inline-block bg-lime px-2 py-0.5 font-mono text-[10px] font-bold text-void">
+                    POPULAIRE
+                  </span>
                 )}
 
-                <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+                <h3 className="font-display text-lg font-bold text-heading">{plan.name}</h3>
 
                 <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold tracking-tight text-gray-900">
+                  <span className="font-display text-4xl font-extrabold text-heading">
                     {formatCurrency(plan.price)}
                   </span>
-                  <span className="text-sm text-gray-400">{plan.period}</span>
+                  <span className="text-sm text-muted">{plan.period}</span>
                 </div>
 
-                <p className="mt-2 text-xs text-gray-400">
-                  {plan.verticals === -1
-                    ? "Toutes les verticales"
-                    : `${plan.verticals} verticale${plan.verticals > 1 ? "s" : ""}`}
-                  {" · "}
-                  {plan.leadsPerDay} leads/jour
+                <p className="mt-2 font-mono text-[11px] text-muted">
+                  {plan.leadsPerDay} leads/jour ·{" "}
+                  {plan.verticals === -1 ? "illimité" : `${plan.verticals} vert.`}
                 </p>
 
-                <div className="my-6 h-px bg-gray-100" />
+                <div className="my-6 h-px bg-border-subtle" />
 
-                <ul className="space-y-3">
+                <ul className="space-y-2.5">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
-                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-500" />
+                    <li key={f} className="flex items-start gap-2 text-[13px] text-sub">
+                      <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-lime" />
                       {f}
                     </li>
                   ))}
@@ -410,13 +361,13 @@ export default function Landing() {
 
                 <Link
                   to="/dashboard"
-                  className={`mt-8 block rounded-xl py-3 text-center text-sm font-semibold transition-all ${
+                  className={`mt-8 block py-3 text-center text-sm font-bold transition-all ${
                     plan.highlighted
-                      ? "bg-primary-600 text-white shadow-lg shadow-primary-500/25 hover:bg-primary-700"
-                      : "bg-gray-900 text-white hover:bg-gray-800"
+                      ? "bg-lime text-void hover:bg-lime-dim"
+                      : "border border-border text-heading hover:border-heading"
                   }`}
                 >
-                  Commencer l'essai gratuit
+                  COMMENCER
                 </Link>
               </div>
             ))}
@@ -424,48 +375,44 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── CTA FINAL ── ─────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gray-900 py-20">
-        <div className="absolute inset-0">
-          <div className="absolute left-1/4 top-0 h-64 w-64 rounded-full bg-primary-500/20 blur-[100px]" />
-          <div className="absolute right-1/4 bottom-0 h-64 w-64 rounded-full bg-accent-500/15 blur-[100px]" />
-        </div>
-        <div className="relative z-10 mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white sm:text-4xl">
-            Prêt à gagner du temps commercial ?
+      {/* ═══ CTA FINAL ═══ ════════════════════════════ */}
+      <section className="relative overflow-hidden py-24">
+        <div className="absolute inset-0 dot-grid opacity-30" />
+        <div className="relative z-10 mx-auto max-w-3xl px-4 text-center">
+          <h2 className="font-display text-3xl font-extrabold text-heading sm:text-5xl">
+            Prêt à vendre du
+            <br />
+            <span className="text-lime">temps commercial</span> ?
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-gray-400">
-            Rejoignez les équipes commerciales qui prospectent avec des leads qualifiés plutôt que des CSV bruts.
+          <p className="mx-auto mt-4 max-w-md text-sub">
+            Des leads qualifiés au lieu de CSV bruts. Testez 14 jours, sans carte.
           </p>
           <Link
             to="/dashboard"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-gray-900 transition-all hover:bg-gray-100"
+            className="group mt-8 inline-flex items-center gap-2 bg-lime px-8 py-3.5 text-base font-bold text-void transition-all hover:bg-lime-dim"
           >
-            Démarrer gratuitement
-            <ArrowRight className="h-4.5 w-4.5" />
+            DÉMARRER GRATUITEMENT
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
       </section>
 
-      {/* ── FOOTER ── ────────────────────────────────── */}
-      <footer className="border-t border-gray-200 bg-white py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-extrabold text-white shadow-sm">
-                N
-              </div>
-              <span className="text-base font-bold text-gray-900">
-                NewCo Intel
-              </span>
+      {/* ═══ FOOTER ═══ ═══════════════════════════════ */}
+      <footer className="border-t border-border-subtle py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 md:flex-row md:justify-between sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-6 w-6 items-center justify-center bg-lime text-[9px] font-extrabold text-void">
+              N
             </div>
-            <div className="flex gap-6 text-sm text-gray-400">
-              <span>Données BODACC</span>
-              <span>·</span>
-              <span>Score IA DeepSeek V3</span>
-              <span>·</span>
-              <span>Enrichissement multi-sources</span>
-            </div>
+            <span className="font-display text-xs font-bold text-heading">
+              NEWCO<span className="text-lime">INTEL</span>
+            </span>
+          </div>
+          <div className="flex gap-6 font-mono text-[10px] text-muted">
+            <span>BODACC</span>
+            <span>DEEPSEEK V3</span>
+            <span>ENRICHISSEMENT</span>
+            <span>QUALIFICATION IA</span>
           </div>
         </div>
       </footer>
