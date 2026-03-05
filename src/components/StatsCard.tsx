@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TrendingUp } from "lucide-react";
 
 interface StatsCardProps {
   label: string;
@@ -16,20 +17,31 @@ export default function StatsCard({
   color,
 }: StatsCardProps) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
+    <div className="surface-elevated group relative overflow-hidden rounded-2xl p-5">
+      {/* Subtle gradient accent */}
+      <div
+        className="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-[0.06] transition-opacity group-hover:opacity-[0.1]"
+        style={{ background: `radial-gradient(circle, ${color}, transparent)` }}
+      />
+
+      <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500">{label}</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+            {label}
+          </p>
+          <p className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900">
+            {value}
+          </p>
           {change && (
-            <p className="mt-1 text-sm font-medium text-accent-600">
+            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
+              <TrendingUp className="h-3 w-3" />
               {change}
             </p>
           )}
         </div>
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-xl"
-          style={{ backgroundColor: `${color}15`, color }}
+          className="flex h-11 w-11 items-center justify-center rounded-xl"
+          style={{ backgroundColor: `${color}12`, color }}
         >
           {icon}
         </div>
