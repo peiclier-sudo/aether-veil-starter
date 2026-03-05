@@ -33,7 +33,7 @@ export default function LeadDetail() {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20 text-center">
         <p className="font-display text-xl font-bold text-heading">Lead introuvable</p>
-        <Link to="/dashboard" className="mt-4 inline-flex items-center gap-2 text-sm text-lime">
+        <Link to="/dashboard" className="mt-4 inline-flex items-center gap-2 text-sm text-accent">
           <ArrowLeft className="h-4 w-4" /> Retour
         </Link>
       </div>
@@ -53,14 +53,14 @@ export default function LeadDetail() {
     <div className="page-in mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <Link
         to="/dashboard"
-        className="mb-6 inline-flex items-center gap-2 font-mono text-[11px] text-muted transition-colors hover:text-lime"
+        className="mb-6 inline-flex items-center gap-2 text-[12px] text-muted transition-colors hover:text-accent"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        DASHBOARD
+        Retour au dashboard
       </Link>
 
       {/* Header */}
-      <div className="card mb-6 overflow-hidden rounded-none">
+      <div className="card mb-6 overflow-hidden">
         <div className="h-[2px]" style={{ background: vColor }} />
         <div className="p-6 sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -76,7 +76,7 @@ export default function LeadDetail() {
                   {lead.verticalLabel}
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] text-muted">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-muted">
                 <span className="flex items-center gap-1.5"><Building2 className="h-3 w-3" />{lead.legalForm}</span>
                 <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" />{lead.city} ({lead.postalCode}) · {lead.region}</span>
                 <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" />Créée {relativeDate(lead.creationDate)}</span>
@@ -98,23 +98,23 @@ export default function LeadDetail() {
         {/* Main */}
         <div className="space-y-4 lg:col-span-2">
           {/* Outreach */}
-          <div className="card relative overflow-hidden rounded-none p-6">
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-lime/5 blur-3xl" />
-            <h2 className="relative mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-lime">
+          <div className="card relative overflow-hidden p-6">
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/5 blur-3xl" />
+            <h2 className="relative mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-accent">
               ANGLE D'ACCROCHE IA
             </h2>
             <p className="relative text-[14px] italic leading-relaxed text-heading/80">
               « {lead.outreachAngle} »
             </p>
-            <button className="relative mt-4 inline-flex items-center gap-1.5 border border-lime/30 px-3 py-1.5 font-mono text-[11px] font-medium text-lime transition-colors hover:bg-lime/10">
+            <button className="relative mt-4 inline-flex items-center gap-1.5 border border-accent/30 px-3 py-1.5 text-[12px] font-medium text-accent transition-colors hover:bg-accent/10">
               <Copy className="h-3 w-3" />
-              COPIER
+              Copier
             </button>
           </div>
 
           {/* Legal */}
-          <div className="card rounded-none p-6">
-            <h2 className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted">Informations légales</h2>
+          <div className="card p-6">
+            <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-muted">Informations légales</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
               {[
                 { l: "SIREN", v: lead.siren, m: true },
@@ -137,15 +137,15 @@ export default function LeadDetail() {
           </div>
 
           {/* Enrichment */}
-          <div className="card rounded-none p-6">
-            <h2 className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted">Enrichissement</h2>
+          <div className="card p-6">
+            <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-muted">Enrichissement</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="card-raised rounded-none p-4">
+              <div className="card-raised p-4">
                 <div className="mb-3 flex items-center gap-2 text-[13px] font-medium text-heading">
                   <Globe className="h-4 w-4 text-muted" /> Présence web
                 </div>
                 {lead.enrichment.hasDomain ? (
-                  <div className="space-y-2 font-mono text-[11px]">
+                  <div className="space-y-2 text-[12px]">
                     <div className="flex justify-between"><span className="text-muted">Domaine</span><span className="text-heading">{lead.enrichment.domain}</span></div>
                     <div className="flex justify-between">
                       <span className="text-muted">Site web</span>
@@ -158,10 +158,10 @@ export default function LeadDetail() {
                     )}
                   </div>
                 ) : (
-                  <p className="font-mono text-[11px] text-score-low">Aucun domaine</p>
+                  <p className="text-[12px] text-score-low">Aucun domaine</p>
                 )}
               </div>
-              <div className="card-raised rounded-none p-4">
+              <div className="card-raised p-4">
                 <div className="mb-3 flex items-center gap-2 text-[13px] font-medium text-heading">
                   <Server className="h-4 w-4 text-muted" /> Réseaux sociaux
                 </div>
@@ -172,7 +172,7 @@ export default function LeadDetail() {
                     ))}
                   </div>
                 ) : (
-                  <p className="font-mono text-[11px] text-muted">Aucune présence</p>
+                  <p className="text-[12px] text-muted">Aucune présence</p>
                 )}
               </div>
             </div>
@@ -182,8 +182,8 @@ export default function LeadDetail() {
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Contact */}
-          <div className="card rounded-none p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+          <div className="card p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
               <Users className="h-3.5 w-3.5" /> Contact
             </h2>
             {lead.contact ? (
@@ -195,36 +195,36 @@ export default function LeadDetail() {
                   <p className="font-mono text-[10px] text-muted">{lead.contact.role}</p>
                 </div>
                 <div className="space-y-2">
-                  <a href={`mailto:${lead.contact.email}`} className="card-raised flex items-center gap-2.5 rounded-none px-3 py-2.5 font-mono text-[11px] text-sub transition-colors hover:text-heading">
+                  <a href={`mailto:${lead.contact.email}`} className="card-raised flex items-center gap-2.5 px-3 py-2.5 text-[12px] text-sub transition-colors hover:text-heading">
                     <Mail className="h-3.5 w-3.5 text-muted" /><span className="truncate">{lead.contact.email}</span>
                   </a>
                   {lead.contact.phone && (
-                    <a href={`tel:${lead.contact.phone}`} className="card-raised flex items-center gap-2.5 rounded-none px-3 py-2.5 font-mono text-[11px] text-sub transition-colors hover:text-heading">
+                    <a href={`tel:${lead.contact.phone}`} className="card-raised flex items-center gap-2.5 px-3 py-2.5 text-[12px] text-sub transition-colors hover:text-heading">
                       <Phone className="h-3.5 w-3.5 text-muted" />{lead.contact.phone}
                     </a>
                   )}
                   {lead.contact.linkedin && (
-                    <div className="card-raised flex items-center gap-2.5 rounded-none px-3 py-2.5 font-mono text-[11px] text-sub">
+                    <div className="card-raised flex items-center gap-2.5 px-3 py-2.5 text-[12px] text-sub">
                       <Linkedin className="h-3.5 w-3.5 text-muted" /><span className="truncate">{lead.contact.linkedin}</span>
                     </div>
                   )}
                 </div>
-                <button className="flex w-full items-center justify-center gap-2 bg-lime py-2.5 font-mono text-[11px] font-bold text-void transition-all hover:bg-lime-dim">
-                  <ExternalLink className="h-3.5 w-3.5" /> OUVRIR CRM
+                <button className="flex w-full items-center justify-center gap-2 bg-accent py-2.5 text-[12px] font-bold text-void transition-all hover:bg-accent-dim">
+                  <ExternalLink className="h-3.5 w-3.5" /> Ouvrir dans le CRM
                 </button>
               </div>
             ) : (
-              <div className="card-raised rounded-none p-5 text-center">
+              <div className="card-raised p-5 text-center">
                 <Users className="mx-auto mb-2 h-5 w-5 text-border" />
                 <p className="text-sm text-muted">Non enrichi</p>
-                <button className="mt-2 font-mono text-[11px] text-lime hover:underline">ENRICHIR</button>
+                <button className="mt-2 text-[12px] text-accent hover:underline">ENRICHIR</button>
               </div>
             )}
           </div>
 
           {/* Score breakdown */}
-          <div className="card rounded-none p-6">
-            <h2 className="mb-5 font-mono text-[10px] uppercase tracking-widest text-muted">Score IA détail</h2>
+          <div className="card p-6">
+            <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-wider text-muted">Score IA détail</h2>
             <div className="space-y-4">
               {scoreBreakdown.map((item) => {
                 const barColor = item.value >= 75 ? "#22c55e" : item.value >= 50 ? "#eab308" : "#ef4444";

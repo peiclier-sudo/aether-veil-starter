@@ -48,7 +48,7 @@ export default function Dashboard() {
   );
 
   const scoreFilters = [
-    { id: "all" as const, label: "ALL" },
+    { id: "all" as const, label: "Tous" },
     { id: "high" as const, label: "75+" },
     { id: "medium" as const, label: "50-74" },
     { id: "low" as const, label: "<50" },
@@ -59,12 +59,11 @@ export default function Dashboard() {
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-lime">01 / Dashboard</p>
-          <h1 className="mt-1 font-display text-2xl font-extrabold text-heading">
-            Leads qualifiés
+          <h1 className="font-display text-2xl font-extrabold text-heading">
+            Dashboard
           </h1>
-          <p className="mt-1 font-mono text-[11px] text-muted">
-            {new Date().toLocaleDateString("fr-FR", {
+          <p className="mt-1 text-[13px] text-muted">
+            Leads qualifiés — {new Date().toLocaleDateString("fr-FR", {
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -73,12 +72,12 @@ export default function Dashboard() {
         </div>
         <button className="card-interactive flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-sub">
           <Download className="h-4 w-4" />
-          EXPORT CSV
+          Exporter CSV
         </button>
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid grid-cols-2 gap-px bg-border-subtle lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatsCard
           label="Créations"
           value={todayStats.totalCreations}
@@ -94,7 +93,7 @@ export default function Dashboard() {
           color="var(--color-score-high)"
         />
         <StatsCard
-          label="Score moy."
+          label="Score moyen"
           value={`${avgScore}`}
           icon={<TrendingUp className="h-5 w-5" />}
           color="var(--color-score-mid)"
@@ -103,7 +102,7 @@ export default function Dashboard() {
           label="Contacts"
           value={`${contactRate}%`}
           icon={<Zap className="h-5 w-5" />}
-          color="var(--color-lime)"
+          color="var(--color-accent)"
         />
       </div>
 
@@ -112,12 +111,12 @@ export default function Dashboard() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <VerticalFilter selected={vertical} onChange={setVertical} />
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 rounded-lg bg-slab p-1">
             {scoreFilters.map((f) => (
               <button
                 key={f.id}
                 onClick={() => setScoreFilter(f.id)}
-                className={`px-3 py-1.5 font-mono text-[11px] font-bold tracking-wider transition-all ${
+                className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition-all ${
                   scoreFilter === f.id
                     ? "bg-heading text-void"
                     : "text-muted hover:text-heading"
@@ -131,30 +130,31 @@ export default function Dashboard() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
             type="text"
-            placeholder="Rechercher nom, activité, ville..."
+            placeholder="Rechercher par nom, activité, ville..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="!pl-11"
           />
         </div>
       </div>
 
-      {/* Results count */}
-      <div className="mb-4 flex items-center justify-between">
-        <p className="font-mono text-[11px] text-muted">
-          <span className="font-bold text-heading">{filteredLeads.length}</span>{" "}
-          lead{filteredLeads.length !== 1 ? "s" : ""}
+      {/* Results */}
+      <div className="mb-4">
+        <p className="text-[13px] text-muted">
+          <span className="font-semibold text-heading">{filteredLeads.length}</span>{" "}
+          lead{filteredLeads.length !== 1 ? "s" : ""} trouvé{filteredLeads.length !== 1 ? "s" : ""}
         </p>
       </div>
 
       {/* Lead grid */}
-      <div className="grid grid-cols-1 gap-px bg-border-subtle lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {filteredLeads.slice(0, visibleCount).map((lead, i) => (
           <div
             key={lead.id}
-            className={`anim-fade-up`}
+            className="anim-fade-up"
             style={{ animationDelay: `${Math.min(i, 10) * 0.03}s` }}
           >
             <LeadCard lead={lead} />
@@ -166,8 +166,8 @@ export default function Dashboard() {
       {filteredLeads.length === 0 && (
         <div className="flex flex-col items-center py-20 text-center">
           <Search className="mb-4 h-8 w-8 text-border" />
-          <p className="font-display text-base font-bold text-heading">Aucun lead</p>
-          <p className="mt-1 text-sm text-muted">Modifiez vos filtres</p>
+          <p className="font-display text-base font-bold text-heading">Aucun lead trouvé</p>
+          <p className="mt-1 text-sm text-muted">Essayez de modifier vos filtres</p>
         </div>
       )}
 
@@ -176,10 +176,10 @@ export default function Dashboard() {
         <div className="mt-8 text-center">
           <button
             onClick={() => setVisibleCount((c) => c + 20)}
-            className="inline-flex items-center gap-2 border border-border px-6 py-2.5 font-mono text-[12px] font-bold text-heading transition-all hover:border-lime hover:text-lime"
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-6 py-2.5 text-[13px] font-semibold text-heading transition-all hover:border-accent hover:text-accent"
           >
             <ChevronDown className="h-4 w-4" />
-            +{filteredLeads.length - visibleCount} LEADS
+            Voir plus ({filteredLeads.length - visibleCount} restants)
           </button>
         </div>
       )}

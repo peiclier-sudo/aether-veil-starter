@@ -10,23 +10,23 @@ interface StatsCardProps {
 
 export default function StatsCard({ label, value, change, icon, color }: StatsCardProps) {
   return (
-    <div className="card group overflow-hidden rounded-none p-4">
+    <div className="card group overflow-hidden p-5">
       <div className="flex items-start justify-between">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted">
             {label}
           </p>
           <p className="mt-2 font-display text-2xl font-extrabold text-heading">
             {value}
           </p>
           {change && (
-            <p className="mt-1 font-mono text-[11px] font-medium text-lime">
+            <p className="mt-1 text-[12px] font-semibold text-accent">
               {change}
             </p>
           )}
         </div>
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-none opacity-50 transition-opacity group-hover:opacity-100"
+          className="flex h-9 w-9 items-center justify-center rounded-lg opacity-40 transition-opacity group-hover:opacity-80"
           style={{ color }}
         >
           {icon}

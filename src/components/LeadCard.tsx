@@ -30,7 +30,7 @@ export default function LeadCard({ lead }: { lead: Lead }) {
   return (
     <Link
       to={`/lead/${lead.id}`}
-      className="card-interactive group relative block overflow-hidden rounded-none p-4"
+      className="card-interactive group relative block overflow-hidden p-4"
     >
       {/* Left accent */}
       <div
@@ -43,14 +43,14 @@ export default function LeadCard({ lead }: { lead: Lead }) {
         <div className="min-w-0 flex-1">
           {/* Header row */}
           <div className="mb-1.5 flex items-center gap-2">
-            <h3 className="truncate text-[14px] font-bold text-heading transition-colors group-hover:text-lime">
+            <h3 className="truncate text-[14px] font-bold text-heading transition-colors group-hover:text-accent">
               {lead.companyName}
             </h3>
-            <ArrowUpRight className="h-3 w-3 flex-shrink-0 text-border transition-all group-hover:text-lime group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <ArrowUpRight className="h-3 w-3 flex-shrink-0 text-border transition-all group-hover:text-accent group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </div>
 
           {/* Meta */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-muted">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted">
             <span className="flex items-center gap-1">
               <Building2 className="h-3 w-3" />
               {lead.legalForm}
@@ -71,18 +71,18 @@ export default function LeadCard({ lead }: { lead: Lead }) {
           {/* Tags */}
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <span
-              className="border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+              className="rounded border px-2 py-0.5 text-[10px] font-semibold"
               style={{ borderColor: vColor, color: vColor }}
             >
               {lead.verticalLabel}
             </span>
             {lead.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="border border-border px-2 py-0.5 text-[10px] text-muted">
+              <span key={tag} className="rounded border border-border px-2 py-0.5 text-[10px] text-muted">
                 {tag}
               </span>
             ))}
             {lead.enrichment.hasDomain && (
-              <span className="flex items-center gap-1 border border-border px-2 py-0.5 text-[10px] text-sub">
+              <span className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-[10px] text-sub">
                 <Globe className="h-2.5 w-2.5" />
                 web
               </span>
@@ -91,7 +91,7 @@ export default function LeadCard({ lead }: { lead: Lead }) {
 
           {/* Contact */}
           {lead.contact && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-2.5 font-mono text-[10px]">
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-2.5 text-[11px]">
               <span className="flex items-center gap-1 text-heading">
                 <User className="h-3 w-3 text-muted" />
                 {lead.contact.firstName} {lead.contact.lastName}
