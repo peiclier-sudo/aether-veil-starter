@@ -32,6 +32,12 @@ const features = [
 
 const verticalIcons = { Globe, Calculator, Shield };
 
+const verticalSlugs: Record<string, string> = {
+  "agence-web": "agences-web",
+  "expert-comptable": "comptables",
+  assureur: "assureurs",
+};
+
 const tickerCompanies = mockLeads.slice(0, 16).map((l) => ({
   name: l.companyName,
   city: l.city,
@@ -168,14 +174,14 @@ export default function Landing() {
           </span>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
             {[
-              { icon: Globe, label: "Agences web", color: "var(--color-vert-web)" },
-              { icon: Calculator, label: "Cabinets comptables", color: "var(--color-vert-compta)" },
-              { icon: Shield, label: "Courtiers & assureurs", color: "var(--color-vert-assur)" },
+              { icon: Globe, label: "Agences web", color: "var(--color-vert-web)", to: "/agences-web" },
+              { icon: Calculator, label: "Cabinets comptables", color: "var(--color-vert-compta)", to: "/comptables" },
+              { icon: Shield, label: "Courtiers & assureurs", color: "var(--color-vert-assur)", to: "/assureurs" },
             ].map((v) => (
-              <div key={v.label} className="flex items-center gap-2 text-[14px] font-medium text-sub">
+              <Link key={v.label} to={v.to} className="flex items-center gap-2 text-[14px] font-medium text-sub transition-colors hover:text-heading">
                 <v.icon className="h-4 w-4" style={{ color: v.color }} />
                 {v.label}
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -315,9 +321,11 @@ export default function Landing() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {verticals.map((v, i) => {
               const Icon = verticalIcons[v.icon as keyof typeof verticalIcons] || Globe;
+              const slug = verticalSlugs[v.id] || v.id;
               return (
-                <div
+                <Link
                   key={v.id}
+                  to={`/${slug}`}
                   className={`anim-fade-up d${i + 1} card-interactive group overflow-hidden`}
                 >
                   <div
@@ -340,8 +348,12 @@ export default function Landing() {
                         </div>
                       ))}
                     </div>
+                    <div className="mt-6 flex items-center gap-1.5 text-[14px] font-semibold transition-colors group-hover:translate-x-1" style={{ color: v.color }}>
+                      Découvrir
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
