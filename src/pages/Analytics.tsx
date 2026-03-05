@@ -7,15 +7,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
   Area,
   AreaChart,
+  LineChart,
+  Line,
 } from "recharts";
-import { mockDailyStats, mockLeads, verticals } from "@/lib/mock-data";
-
-const SCORE_COLORS = ["#16a34a", "#d97706", "#f97316", "#dc2626"];
+import { mockDailyStats, mockLeads } from "@/lib/mock-data";
 
 const tooltipStyle = {
   contentStyle: {
@@ -33,6 +30,16 @@ const tooltipStyle = {
 
 const axisStyle = { fontSize: 11, fill: "#a1a1aa", fontFamily: "'IBM Plex Mono', monospace" };
 
+/* ── Simulated client-facing data ─────────────── */
+
+const conversionFunnel = [
+  { stage: "BODACC brut", count: 4850, fill: "#e4e4e7" },
+  { stage: "Qualifiés IA", count: 387, fill: "#a5b4fc" },
+  { stage: "Contactés", count: 214, fill: "#818cf8" },
+  { stage: "RDV obtenus", count: 68, fill: "#6366f1" },
+  { stage: "Signés", count: 23, fill: "#4f46e5" },
+];
+
 export default function Analytics() {
   const chartData = mockDailyStats.slice(-14).map((d) => ({
     date: d.date.slice(5),
@@ -40,34 +47,27 @@ export default function Analytics() {
     Qualifiés: d.qualified,
   }));
 
-  const scoreDistribution = useMemo(() => {
-    const ranges = [
-      { name: "75-100", count: 0, fill: SCORE_COLORS[0] },
-      { name: "50-74", count: 0, fill: SCORE_COLORS[1] },
-      { name: "25-49", count: 0, fill: SCORE_COLORS[2] },
-      { name: "0-24", count: 0, fill: SCORE_COLORS[3] },
-    ];
-    mockLeads.forEach((l) => {
-      if (l.aiScore >= 75) ranges[0].count++;
-      else if (l.aiScore >= 50) ranges[1].count++;
-      else if (l.aiScore >= 25) ranges[2].count++;
-      else ranges[3].count++;
-    });
-    return ranges;
-  }, []);
-
-  const verticalDistribution = useMemo(() => {
-    return verticals.map((v) => ({
-      name: v.label,
-      value: mockLeads.filter((l) => l.vertical === v.id).length,
-      color: v.color,
-    }));
-  }, []);
-
   const qualificationTrend = mockDailyStats.slice(-14).map((d) => ({
     date: d.date.slice(5),
     taux: Math.round((d.qualified / d.totalCreations) * 100),
   }));
+
+  /* Revenue tracking (simulated 30 days) */
+  const revenueData = useMemo(() => {
+    return mockDailyStats.slice(-14).map((d, i) => ({
+      date: d.date.slice(5),
+      pipeline: Math.round(3200 + i * 420 + Math.random() * 800),
+      signé: Math.round(800 + i * 180 + Math.random() * 400),
+    }));
+  }, []);
+
+  /* Response time data */
+  const responseData = useMemo(() => {
+    return mockDailyStats.slice(-14).map((d) => ({
+      date: d.date.slice(5),
+      minutes: Math.round(12 + Math.random() * 35),
+    }));
+  }, []);
 
   const regionData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -80,22 +80,45 @@ export default function Analytics() {
 
   const maxRegion = regionData[0]?.count || 1;
 
+  /* KPI cards */
+  const totalLeads = mockLeads.length;
+  const highScore = mockLeads.filter((l) => l.aiScore >= 75).length;
+  const contactRate = Math.round((mockLeads.filter((l) => l.contact).length / totalLeads) * 100);
+  const avgScore = Math.round(mockLeads.reduce((a, b) => a + b.aiScore, 0) / totalLeads);
+
   return (
     <div className="page-in mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <p className="text-[12px] font-semibold uppercase tracking-wider text-accent">Analytics</p>
+        <p className="text-[12px] font-semibold uppercase tracking-wider text-accent">Performance</p>
         <h1 className="mt-1 font-display text-[2rem] text-heading">
-          Vue d'ensemble
+          Votre pipeline en temps réel
         </h1>
-        <p className="mt-1 text-[13px] text-muted">14 derniers jours</p>
+        <p className="mt-1 text-[13px] text-muted">14 derniers jours · Données actualisées en continu</p>
+      </div>
+
+      {/* ── KPI row ────────────────────────── */}
+      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+        {[
+          { label: "Leads qualifiés", val: totalLeads, sub: "ce mois", accent: true },
+          { label: "Score moyen", val: avgScore, sub: "sur 100" },
+          { label: "Contacts enrichis", val: `${contactRate}%`, sub: "email + téléphone" },
+          { label: "Leads chauds (>75)", val: highScore, sub: `${Math.round((highScore / totalLeads) * 100)}% du total`, accent: true },
+        ].map((kpi) => (
+          <div key={kpi.label} className="card p-5 transition-all hover:shadow-md hover:shadow-black/[0.04]">
+            <p className="text-[12px] font-medium text-muted">{kpi.label}</p>
+            <p className={`mt-2 text-2xl font-bold tracking-tight ${kpi.accent ? "text-accent" : "text-heading"}`}>{kpi.val}</p>
+            <p className="mt-0.5 text-[11px] text-muted">{kpi.sub}</p>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Volume */}
         <div className="card p-6">
-          <h3 className="mb-5 text-[12px] font-semibold uppercase tracking-wider text-muted">
-            Volume créations vs qualifiés
+          <h3 className="mb-1 text-[15px] font-semibold text-heading">
+            Volume quotidien
           </h3>
+          <p className="mb-5 text-[12px] text-muted">Créations BODACC vs leads qualifiés pour vous</p>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={chartData} barGap={2}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f2" vertical={false} />
@@ -108,66 +131,72 @@ export default function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        {/* Score distribution */}
+        {/* Conversion funnel */}
         <div className="card p-6">
-          <h3 className="mb-5 text-[12px] font-semibold uppercase tracking-wider text-muted">
-            Distribution scores IA
+          <h3 className="mb-1 text-[15px] font-semibold text-heading">
+            Funnel de conversion
           </h3>
+          <p className="mb-5 text-[12px] text-muted">Du flux BODACC brut au contrat signé</p>
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={scoreDistribution} layout="vertical" barSize={20}>
+            <BarChart data={conversionFunnel} layout="vertical" barSize={24}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f2" horizontal={false} />
               <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
-              <YAxis dataKey="name" type="category" tick={{ ...axisStyle, fontWeight: 600 }} width={50} axisLine={false} tickLine={false} />
+              <YAxis dataKey="stage" type="category" tick={{ ...axisStyle, fontWeight: 500, fontSize: 11 }} width={90} axisLine={false} tickLine={false} />
               <Tooltip {...tooltipStyle} />
-              <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                {scoreDistribution.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
+              <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+                {conversionFunnel.map((entry, i) => (
+                  <Bar key={i} dataKey="count" fill={entry.fill} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Vertical pie */}
+        {/* Pipeline revenue */}
         <div className="card p-6">
-          <h3 className="mb-5 text-[12px] font-semibold uppercase tracking-wider text-muted">
-            Répartition par verticale
+          <h3 className="mb-1 text-[15px] font-semibold text-heading">
+            Valeur pipeline
           </h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie
-                data={verticalDistribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={85}
-                paddingAngle={3}
-                dataKey="value"
-                strokeWidth={0}
-              >
-                {verticalDistribution.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
+          <p className="mb-5 text-[12px] text-muted">Chiffre d'affaires estimé vs signé (€)</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={revenueData}>
+              <defs>
+                <linearGradient id="pipelineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.12} />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="signeGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#16a34a" stopOpacity={0.12} />
+                  <stop offset="100%" stopColor="#16a34a" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f2" vertical={false} />
+              <XAxis dataKey="date" tick={axisStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
               <Tooltip {...tooltipStyle} />
-            </PieChart>
+              <Area type="monotone" dataKey="pipeline" stroke="#6366f1" strokeWidth={2} fill="url(#pipelineGrad)" dot={false} name="Pipeline" />
+              <Area type="monotone" dataKey="signé" stroke="#16a34a" strokeWidth={2} fill="url(#signeGrad)" dot={false} name="Signé" />
+            </AreaChart>
           </ResponsiveContainer>
-          <div className="mt-2 flex justify-center gap-5">
-            {verticalDistribution.map((v) => (
-              <div key={v.name} className="flex items-center gap-2 text-[12px]">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: v.color }} />
-                <span className="text-muted">{v.name}</span>
-                <span className="font-mono font-semibold text-heading">{v.value}</span>
+          <div className="mt-3 flex justify-center gap-6">
+            {[
+              { label: "Pipeline", color: "#6366f1" },
+              { label: "Signé", color: "#16a34a" },
+            ].map((l) => (
+              <div key={l.label} className="flex items-center gap-2 text-[12px] text-muted">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: l.color }} />
+                {l.label}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Qualification trend */}
+        {/* Taux de qualification */}
         <div className="card p-6">
-          <h3 className="mb-5 text-[12px] font-semibold uppercase tracking-wider text-muted">
+          <h3 className="mb-1 text-[15px] font-semibold text-heading">
             Taux de qualification
           </h3>
+          <p className="mb-5 text-[12px] text-muted">% de créations BODACC qualifiées pour votre segment</p>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={qualificationTrend}>
               <defs>
@@ -193,12 +222,37 @@ export default function Analytics() {
           </ResponsiveContainer>
         </div>
 
+        {/* Temps de réponse moyen */}
+        <div className="card p-6">
+          <h3 className="mb-1 text-[15px] font-semibold text-heading">
+            Rapidité de contact
+          </h3>
+          <p className="mb-5 text-[12px] text-muted">Temps moyen entre réception du lead et premier contact (min)</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart data={responseData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f2" vertical={false} />
+              <XAxis dataKey="date" tick={axisStyle} axisLine={false} tickLine={false} />
+              <YAxis tick={axisStyle} unit="min" axisLine={false} tickLine={false} />
+              <Tooltip {...tooltipStyle} />
+              <Line
+                type="monotone"
+                dataKey="minutes"
+                stroke="#d97706"
+                strokeWidth={2}
+                dot={{ fill: "#d97706", r: 3, strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 2, stroke: "#ffffff" }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
         {/* Regions — full width */}
-        <div className="card p-6 lg:col-span-2">
-          <h3 className="mb-5 text-[12px] font-semibold uppercase tracking-wider text-muted">
+        <div className="card p-6">
+          <h3 className="mb-1 text-[15px] font-semibold text-heading">
             Top régions
           </h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <p className="mb-5 text-[12px] text-muted">Répartition géographique de vos leads qualifiés</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {regionData.map((r, i) => (
               <div key={r.region} className="group relative overflow-hidden rounded-xl bg-surface p-3.5">
                 <div
