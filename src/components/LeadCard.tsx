@@ -10,48 +10,47 @@ import {
   User,
 } from "lucide-react";
 import type { Lead } from "@/lib/types";
-import { relativeDate, getScoreColor } from "@/lib/utils";
-import ScoreBadge from "./ScoreBadge";
+import { relativeDate } from "@/lib/utils";
 
-const verticalStyles: Record<string, { bg: string; text: string; dot: string }> = {
-  "agence-web": { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500" },
-  "expert-comptable": { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
-  assureur: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
+const vertColors: Record<string, string> = {
+  "agence-web": "var(--color-vert-web)",
+  "expert-comptable": "var(--color-vert-compta)",
+  assureur: "var(--color-vert-assur)",
 };
 
 export default function LeadCard({ lead }: { lead: Lead }) {
-  const vs = verticalStyles[lead.vertical] || verticalStyles["agence-web"];
-  const scoreColor = getScoreColor(lead.aiScore);
+  const vColor = vertColors[lead.vertical] || "var(--color-muted)";
+  const scoreColor =
+    lead.aiScore >= 75
+      ? "text-score-high"
+      : lead.aiScore >= 50
+        ? "text-score-mid"
+        : "text-score-low";
 
   return (
     <Link
       to={`/lead/${lead.id}`}
-      className="surface-interactive group relative block overflow-hidden rounded-2xl p-5"
+      className="card-interactive group relative block overflow-hidden rounded-none p-4"
     >
-      {/* Score accent bar */}
+      {/* Left accent */}
       <div
-        className={`absolute inset-y-0 left-0 w-1 transition-all duration-300 group-hover:w-1.5 ${
-          lead.aiScore >= 75
-            ? "bg-emerald-500"
-            : lead.aiScore >= 50
-              ? "bg-amber-500"
-              : "bg-red-400"
-        }`}
+        className="absolute inset-y-0 left-0 w-[2px] transition-all group-hover:w-[3px]"
+        style={{ background: vColor }}
       />
 
-      <div className="flex items-start gap-4">
-        {/* Left content */}
+      <div className="flex items-start gap-3">
+        {/* Content */}
         <div className="min-w-0 flex-1">
-          {/* Header */}
-          <div className="mb-2 flex items-center gap-2">
-            <h3 className="truncate text-[15px] font-bold text-gray-900 transition-colors group-hover:text-primary-700">
+          {/* Header row */}
+          <div className="mb-1.5 flex items-center gap-2">
+            <h3 className="truncate text-[14px] font-bold text-heading transition-colors group-hover:text-lime">
               {lead.companyName}
             </h3>
-            <ArrowUpRight className="h-3.5 w-3.5 flex-shrink-0 text-gray-300 transition-all group-hover:text-primary-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <ArrowUpRight className="h-3 w-3 flex-shrink-0 text-border transition-all group-hover:text-lime group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </div>
 
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+          {/* Meta */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-muted">
             <span className="flex items-center gap-1">
               <Building2 className="h-3 w-3" />
               {lead.legalForm}
@@ -67,43 +66,42 @@ export default function LeadCard({ lead }: { lead: Lead }) {
           </div>
 
           {/* Activity */}
-          <p className="mt-2.5 text-sm text-gray-600">{lead.activity}</p>
+          <p className="mt-2 text-[13px] text-sub">{lead.activity}</p>
 
-          {/* Tags row */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${vs.bg} ${vs.text}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${vs.dot}`} />
+          {/* Tags */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            <span
+              className="border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+              style={{ borderColor: vColor, color: vColor }}
+            >
               {lead.verticalLabel}
             </span>
             {lead.tags.slice(0, 2).map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
-              >
+              <span key={tag} className="border border-border px-2 py-0.5 text-[10px] text-muted">
                 {tag}
               </span>
             ))}
             {lead.enrichment.hasDomain && (
-              <span className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600">
-                <Globe className="h-3 w-3" />
-                Web
+              <span className="flex items-center gap-1 border border-border px-2 py-0.5 text-[10px] text-sub">
+                <Globe className="h-2.5 w-2.5" />
+                web
               </span>
             )}
           </div>
 
-          {/* Contact strip */}
+          {/* Contact */}
           {lead.contact && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-gray-100 pt-3 text-xs">
-              <span className="flex items-center gap-1 font-medium text-gray-700">
-                <User className="h-3 w-3 text-gray-400" />
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-2.5 font-mono text-[10px]">
+              <span className="flex items-center gap-1 text-heading">
+                <User className="h-3 w-3 text-muted" />
                 {lead.contact.firstName} {lead.contact.lastName}
               </span>
-              <span className="flex items-center gap-1 text-gray-400">
+              <span className="flex items-center gap-1 text-muted">
                 <Mail className="h-3 w-3" />
                 {lead.contact.email}
               </span>
               {lead.contact.phone && (
-                <span className="flex items-center gap-1 text-gray-400">
+                <span className="flex items-center gap-1 text-muted">
                   <Phone className="h-3 w-3" />
                   {lead.contact.phone}
                 </span>
@@ -112,8 +110,20 @@ export default function LeadCard({ lead }: { lead: Lead }) {
           )}
         </div>
 
-        {/* Score badge */}
-        <ScoreBadge score={lead.aiScore} size="sm" />
+        {/* Score */}
+        <div className="flex flex-col items-center gap-0.5">
+          <span className={`font-mono text-lg font-bold ${scoreColor}`}>
+            {lead.aiScore}
+          </span>
+          <div
+            className="h-1 w-6"
+            style={{
+              background: `linear-gradient(90deg, ${
+                lead.aiScore >= 75 ? "#22c55e" : lead.aiScore >= 50 ? "#eab308" : "#ef4444"
+              } ${lead.aiScore}%, var(--color-border) ${lead.aiScore}%)`,
+            }}
+          />
+        </div>
       </div>
     </Link>
   );

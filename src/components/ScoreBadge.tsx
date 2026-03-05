@@ -5,74 +5,62 @@ interface ScoreBadgeProps {
   size?: "sm" | "md" | "lg";
 }
 
-function scoreGradient(score: number): [string, string] {
-  if (score >= 75) return ["#10b981", "#059669"];
-  if (score >= 50) return ["#f59e0b", "#d97706"];
-  return ["#ef4444", "#dc2626"];
+function scoreColor(score: number): string {
+  if (score >= 75) return "#22c55e";
+  if (score >= 50) return "#eab308";
+  return "#ef4444";
 }
 
-const sizes = {
-  sm: { box: 40, stroke: 3, radius: 16, font: "text-xs" },
-  md: { box: 56, stroke: 3.5, radius: 22, font: "text-sm" },
-  lg: { box: 88, stroke: 4, radius: 36, font: "text-2xl" },
+const dims = {
+  sm: { box: 36, r: 14, sw: 2.5, font: "text-[11px]" },
+  md: { box: 52, r: 20, sw: 3, font: "text-sm" },
+  lg: { box: 80, r: 32, sw: 3.5, font: "text-xl" },
 };
 
 export default function ScoreBadge({ score, size = "md" }: ScoreBadgeProps) {
-  const s = sizes[size];
-  const circumference = 2 * Math.PI * s.radius;
-  const offset = circumference - (score / 100) * circumference;
-  const [color1, color2] = scoreGradient(score);
-  const gradientId = `score-${size}-${score}`;
+  const d = dims[size];
+  const circ = 2 * Math.PI * d.r;
+  const offset = circ - (score / 100) * circ;
+  const color = scoreColor(score);
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="relative" style={{ width: s.box, height: s.box }}>
+      <div className="relative" style={{ width: d.box, height: d.box }}>
         <svg
-          viewBox={`0 0 ${s.box} ${s.box}`}
+          viewBox={`0 0 ${d.box} ${d.box}`}
           className="absolute inset-0"
           style={{ transform: "rotate(-90deg)" }}
         >
-          <defs>
-            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={color1} />
-              <stop offset="100%" stopColor={color2} />
-            </linearGradient>
-          </defs>
-          {/* Track */}
           <circle
-            cx={s.box / 2}
-            cy={s.box / 2}
-            r={s.radius}
+            cx={d.box / 2}
+            cy={d.box / 2}
+            r={d.r}
             fill="none"
-            stroke="#f3f4f6"
-            strokeWidth={s.stroke}
+            stroke="var(--color-border)"
+            strokeWidth={d.sw}
           />
-          {/* Progress */}
           <circle
-            cx={s.box / 2}
-            cy={s.box / 2}
-            r={s.radius}
+            cx={d.box / 2}
+            cy={d.box / 2}
+            r={d.r}
             fill="none"
-            stroke={`url(#${gradientId})`}
-            strokeWidth={s.stroke}
-            strokeDasharray={circumference}
+            stroke={color}
+            strokeWidth={d.sw}
+            strokeDasharray={circ}
             strokeDashoffset={offset}
-            strokeLinecap="round"
-            className="score-ring"
+            strokeLinecap="butt"
+            className="score-ring-track"
           />
         </svg>
         <span
-          className={`absolute inset-0 flex items-center justify-center font-extrabold ${s.font}`}
-          style={{ color: color2 }}
+          className={`absolute inset-0 flex items-center justify-center font-mono font-bold ${d.font}`}
+          style={{ color }}
         >
           {score}
         </span>
       </div>
       {size !== "sm" && (
-        <span
-          className="text-xs font-semibold"
-          style={{ color: color2 }}
-        >
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted">
           {getScoreLabel(score)}
         </span>
       )}

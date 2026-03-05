@@ -1,39 +1,36 @@
 import { Globe, Calculator, Shield, Layers } from "lucide-react";
 import type { Vertical } from "@/lib/types";
 
-interface VerticalFilterProps {
-  selected: Vertical;
-  onChange: (v: Vertical) => void;
-}
-
 const items: { id: Vertical; label: string; icon: typeof Globe; color: string }[] = [
-  { id: "all", label: "Toutes", icon: Layers, color: "#6b7280" },
-  { id: "agence-web", label: "Agences Web", icon: Globe, color: "#6366f1" },
-  { id: "expert-comptable", label: "Experts-Comptables", icon: Calculator, color: "#10b981" },
-  { id: "assureur", label: "Assureurs", icon: Shield, color: "#f59e0b" },
+  { id: "all", label: "TOUS", icon: Layers, color: "var(--color-muted)" },
+  { id: "agence-web", label: "WEB", icon: Globe, color: "var(--color-vert-web)" },
+  { id: "expert-comptable", label: "COMPTA", icon: Calculator, color: "var(--color-vert-compta)" },
+  { id: "assureur", label: "ASSUR", icon: Shield, color: "var(--color-vert-assur)" },
 ];
 
-export default function VerticalFilter({ selected, onChange }: VerticalFilterProps) {
+export default function VerticalFilter({
+  selected,
+  onChange,
+}: {
+  selected: Vertical;
+  onChange: (v: Vertical) => void;
+}) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1">
       {items.map((item) => {
         const isActive = selected === item.id;
         return (
           <button
             key={item.id}
             onClick={() => onChange(item.id)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] font-bold tracking-wider transition-all ${
               isActive
-                ? "text-white shadow-sm"
-                : "bg-white text-gray-500 ring-1 ring-gray-200 hover:bg-gray-50 hover:text-gray-700"
+                ? "text-void"
+                : "border border-border text-muted hover:border-heading hover:text-heading"
             }`}
-            style={
-              isActive
-                ? { backgroundColor: item.color, boxShadow: `0 4px 12px ${item.color}30` }
-                : undefined
-            }
+            style={isActive ? { background: item.color, color: "var(--color-void)" } : undefined}
           >
-            <item.icon className="h-4 w-4" />
+            <item.icon className="h-3 w-3" />
             {item.label}
           </button>
         );
