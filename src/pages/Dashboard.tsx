@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Building2,
   TrendingUp,
@@ -15,6 +15,8 @@ import StatsCard from "@/components/StatsCard";
 import VerticalFilter from "@/components/VerticalFilter";
 
 export default function Dashboard() {
+  useEffect(() => { document.title = "Dashboard — NewCo Intel"; }, []);
+
   const [vertical, setVertical] = useState<Vertical>("all");
   const [search, setSearch] = useState("");
   const [scoreFilter, setScoreFilter] = useState<"all" | "high" | "medium" | "low">("all");

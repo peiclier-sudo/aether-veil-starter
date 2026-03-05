@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -181,6 +181,12 @@ export default function VerticalLanding({ slug }: { slug: string }) {
   const topLeads = leads.slice(0, 8);
   const avgScore = Math.round(leads.reduce((a, b) => a + b.aiScore, 0) / (leads.length || 1));
   const contactRate = Math.round((leads.filter((l) => l.contact).length / (leads.length || 1)) * 100);
+
+  useEffect(() => {
+    document.title = `NewCo Intel — ${content.badge} | Leads qualifiés par IA`;
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", content.sub);
+  }, [content]);
 
   const [visibleCount, setVisibleCount] = useState(6);
   const [search, setSearch] = useState("");

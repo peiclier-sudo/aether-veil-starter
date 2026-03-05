@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -18,10 +19,38 @@ import {
   ArrowUpRight,
   Quote,
   Phone,
+  ChevronDown,
 } from "lucide-react";
 import { pricingPlans, verticals, mockLeads } from "@/lib/mock-data";
 import { formatCurrency } from "@/lib/utils";
 import Logo from "@/components/Logo";
+
+const faqs = [
+  {
+    q: "D'où viennent les données ?",
+    a: "Du BODACC (Bulletin Officiel des Annonces Civiles et Commerciales), la source officielle et publique des créations d'entreprises en France. Les données sont complétées par enrichissement via Societeinfo, Dropcontact et scraping DNS.",
+  },
+  {
+    q: "Est-ce conforme au RGPD ?",
+    a: "Oui. Les données BODACC sont publiques par nature (publication légale obligatoire). L'enrichissement contact respecte le cadre de l'intérêt légitime B2B. Chaque lead inclut un lien de désinscription conforme.",
+  },
+  {
+    q: "Combien de leads vais-je recevoir par jour ?",
+    a: "Entre 12 et 40 leads qualifiés par jour selon votre verticale et votre zone géographique. Le plan Starter est limité à 30/jour, les plans Pro et Enterprise sont illimités.",
+  },
+  {
+    q: "Est-ce que les leads sont partagés avec d'autres utilisateurs ?",
+    a: "Les données BODACC sont publiques, mais notre qualification IA, l'enrichissement contact et le message d'accroche sont exclusifs à votre compte. Vous avez un avantage de timing : nos utilisateurs contactent les leads en moyenne 48h après la création, vs 2 à 4 semaines pour les fichiers CSV classiques.",
+  },
+  {
+    q: "Puis-je intégrer NewCo Intel à mon CRM ?",
+    a: "Oui. Le plan Pro inclut l'accès API et les webhooks temps réel. Le plan Enterprise ajoute les intégrations natives HubSpot et Pipedrive. Vous pouvez aussi exporter en CSV à tout moment.",
+  },
+  {
+    q: "Que se passe-t-il après les 14 jours d'essai ?",
+    a: "Votre compte passe automatiquement en lecture seule. Pas de facturation surprise, pas de carte bancaire demandée à l'inscription. Vous choisissez votre plan si vous souhaitez continuer.",
+  },
+];
 
 const features = [
   { icon: Database, title: "Flux BODACC temps réel", desc: "300 à 800 créations ingérées chaque jour. Structurées, dédupliquées et prêtes à qualifier — sans aucune intervention manuelle." },
@@ -70,7 +99,31 @@ const testimonials = [
   },
 ];
 
+function FAQItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-border">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between py-5 text-left"
+      >
+        <span className="pr-4 text-[16px] font-medium text-heading">{q}</span>
+        <ChevronDown className={`h-4 w-4 flex-shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <p className="anim-fade-in pb-5 pr-8 text-[14px] leading-relaxed text-sub">{a}</p>
+      )}
+    </div>
+  );
+}
+
 export default function Landing() {
+  useEffect(() => {
+    document.title = "NewCo Intel — Leads B2B qualifiés par IA depuis le BODACC";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute("content", "Recevez chaque matin des leads qualifiés issus des créations d'entreprises BODACC. Score IA, email du dirigeant, message d'accroche — prêts à prospecter.");
+  }, []);
+
   return (
     <div className="bg-white">
       {/* ── Hero ─────────────────────────────── */}
@@ -522,6 +575,33 @@ export default function Landing() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ──────────────────────────────────────── */}
+      <section className="py-24">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <p className="mb-3 text-[13px] font-semibold uppercase tracking-widest text-accent">
+              Questions fréquentes
+            </p>
+            <h2 className="font-display text-[2.5rem] leading-tight text-heading sm:text-5xl">
+              Tout ce que vous devez savoir.
+            </h2>
+          </div>
+
+          <div className="border-t border-border">
+            {faqs.map((faq) => (
+              <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+            ))}
+          </div>
+
+          <p className="mt-8 text-center text-[14px] text-muted">
+            Une autre question ?{" "}
+            <a href="mailto:contact@newcointel.fr" className="font-medium text-accent transition-colors hover:text-accent-dim">
+              Écrivez-nous
+            </a>
+          </p>
         </div>
       </section>
 

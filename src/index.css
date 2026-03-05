@@ -225,3 +225,30 @@ input::placeholder {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--color-border) 20%, var(--color-border) 80%, transparent);
 }
+
+/* ── Mobile polish ────────────────────── */
+@media (max-width: 640px) {
+  /* Prevent horizontal overflow on small screens */
+  .hero-gradient { overflow-x: clip; }
+
+  /* Tighter section padding on mobile */
+  section { padding-left: 1rem; padding-right: 1rem; }
+
+  /* Cards: slightly less padding on mobile */
+  .card-interactive { padding: 1.25rem; }
+
+  /* Pricing cards: no scale on mobile to prevent overflow */
+  .scale-\[1\.02\] { transform: none; }
+
+  /* Ticker: faster on small screens for readability */
+  .ticker-track { animation-duration: 20s; }
+
+  /* Smaller display text on very small screens */
+  .font-display { word-break: break-word; }
+}
+
+/* ── OG image hint (for crawlers) ─────── */
+@media (max-width: 480px) {
+  /* Prevent text overflow on tiny screens */
+  h1, h2 { overflow-wrap: break-word; }
+}
