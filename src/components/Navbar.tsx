@@ -31,17 +31,17 @@ export default function Navbar() {
     <nav
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "border-b border-border-subtle bg-void/90 backdrop-blur-xl"
+          ? "border-b border-border bg-white/80 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
           : "border-b border-transparent bg-transparent"
       }`}
     >
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-[12px] font-extrabold text-void">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-[13px] font-bold text-white">
             N
           </div>
-          <span className="font-display text-[15px] font-bold tracking-tight text-heading">
+          <span className="text-[16px] font-semibold tracking-tight text-heading">
             NewCo<span className="text-accent">Intel</span>
           </span>
         </Link>
@@ -54,14 +54,14 @@ export default function Navbar() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                  active ? "text-accent" : "text-muted hover:text-heading"
+                className={`relative flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-[14px] font-medium transition-colors ${
+                  active ? "text-accent" : "text-sub hover:text-heading hover:bg-surface"
                 }`}
               >
-                <item.icon className="h-3.5 w-3.5" />
+                <item.icon className="h-4 w-4" />
                 {item.label}
                 {active && (
-                  <span className="absolute inset-x-3 -bottom-[13px] h-[2px] rounded-full bg-accent" />
+                  <span className="absolute inset-x-3 -bottom-[17px] h-[2px] rounded-full bg-accent" />
                 )}
               </Link>
             );
@@ -72,7 +72,7 @@ export default function Navbar() {
         <div className="hidden items-center gap-3 md:flex">
           <Link
             to="/dashboard"
-            className="rounded-lg bg-accent px-4 py-1.5 text-[13px] font-semibold text-void transition-all hover:bg-accent-dim"
+            className="rounded-lg bg-accent px-5 py-2 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-accent-dim"
           >
             Essai gratuit
           </Link>
@@ -80,7 +80,7 @@ export default function Navbar() {
 
         {/* Mobile */}
         <button
-          className="rounded-md p-1.5 text-muted transition-colors hover:text-heading md:hidden"
+          className="rounded-lg p-2 text-sub transition-colors hover:text-heading hover:bg-surface md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -89,7 +89,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="anim-fade-in border-t border-border-subtle bg-slab px-4 py-3 md:hidden">
+        <div className="anim-fade-in border-t border-border bg-white px-4 py-3 md:hidden">
           {navItems.map((item) => {
             const active = location.pathname === item.to;
             return (
@@ -98,7 +98,7 @@ export default function Navbar() {
                 to={item.to}
                 onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  active ? "text-accent" : "text-sub hover:text-heading"
+                  active ? "text-accent bg-accent-soft" : "text-sub hover:text-heading hover:bg-surface"
                 }`}
               >
                 <item.icon className="h-4 w-4" />
@@ -109,7 +109,7 @@ export default function Navbar() {
           <Link
             to="/dashboard"
             onClick={() => setMobileOpen(false)}
-            className="mt-2 block rounded-lg bg-accent py-2.5 text-center text-sm font-semibold text-void"
+            className="mt-2 block rounded-lg bg-accent py-2.5 text-center text-sm font-semibold text-white"
           >
             Essai gratuit
           </Link>

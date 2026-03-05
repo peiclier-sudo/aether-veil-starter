@@ -59,10 +59,10 @@ export default function Dashboard() {
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-extrabold text-heading">
+          <h1 className="font-display text-3xl text-heading">
             Dashboard
           </h1>
-          <p className="mt-1 text-[13px] text-muted">
+          <p className="mt-1 text-[14px] text-muted">
             Leads qualifiés — {new Date().toLocaleDateString("fr-FR", {
               weekday: "long",
               day: "numeric",
@@ -70,14 +70,14 @@ export default function Dashboard() {
             })}
           </p>
         </div>
-        <button className="card-interactive flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-sub">
+        <button className="card-interactive flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium text-sub">
           <Download className="h-4 w-4" />
           Exporter CSV
         </button>
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatsCard
           label="Créations"
           value={todayStats.totalCreations}
@@ -111,14 +111,14 @@ export default function Dashboard() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <VerticalFilter selected={vertical} onChange={setVertical} />
 
-          <div className="flex items-center gap-1 rounded-lg bg-slab p-1">
+          <div className="flex items-center gap-1 rounded-lg bg-surface p-1">
             {scoreFilters.map((f) => (
               <button
                 key={f.id}
                 onClick={() => setScoreFilter(f.id)}
                 className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition-all ${
                   scoreFilter === f.id
-                    ? "bg-heading text-void"
+                    ? "bg-white text-heading shadow-sm"
                     : "text-muted hover:text-heading"
                 }`}
               >
@@ -150,7 +150,7 @@ export default function Dashboard() {
       </div>
 
       {/* Lead grid */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {filteredLeads.slice(0, visibleCount).map((lead, i) => (
           <div
             key={lead.id}
@@ -165,8 +165,8 @@ export default function Dashboard() {
       {/* Empty */}
       {filteredLeads.length === 0 && (
         <div className="flex flex-col items-center py-20 text-center">
-          <Search className="mb-4 h-8 w-8 text-border" />
-          <p className="font-display text-base font-bold text-heading">Aucun lead trouvé</p>
+          <Search className="mb-4 h-8 w-8 text-raised" />
+          <p className="text-base font-semibold text-heading">Aucun lead trouvé</p>
           <p className="mt-1 text-sm text-muted">Essayez de modifier vos filtres</p>
         </div>
       )}
@@ -176,7 +176,7 @@ export default function Dashboard() {
         <div className="mt-8 text-center">
           <button
             onClick={() => setVisibleCount((c) => c + 20)}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-6 py-2.5 text-[13px] font-semibold text-heading transition-all hover:border-accent hover:text-accent"
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-6 py-2.5 text-[13px] font-semibold text-heading transition-all hover:border-accent hover:text-accent hover:shadow-sm"
           >
             <ChevronDown className="h-4 w-4" />
             Voir plus ({filteredLeads.length - visibleCount} restants)

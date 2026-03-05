@@ -30,11 +30,11 @@ export default function LeadCard({ lead }: { lead: Lead }) {
   return (
     <Link
       to={`/lead/${lead.id}`}
-      className="card-interactive group relative block overflow-hidden p-4"
+      className="card-interactive group relative block overflow-hidden p-5"
     >
       {/* Left accent */}
       <div
-        className="absolute inset-y-0 left-0 w-[2px] transition-all group-hover:w-[3px]"
+        className="absolute inset-y-0 left-0 w-[3px] transition-all group-hover:w-1"
         style={{ background: vColor }}
       />
 
@@ -43,14 +43,14 @@ export default function LeadCard({ lead }: { lead: Lead }) {
         <div className="min-w-0 flex-1">
           {/* Header row */}
           <div className="mb-1.5 flex items-center gap-2">
-            <h3 className="truncate text-[14px] font-bold text-heading transition-colors group-hover:text-accent">
+            <h3 className="truncate text-[15px] font-semibold text-heading transition-colors group-hover:text-accent">
               {lead.companyName}
             </h3>
-            <ArrowUpRight className="h-3 w-3 flex-shrink-0 text-border transition-all group-hover:text-accent group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <ArrowUpRight className="h-3.5 w-3.5 flex-shrink-0 text-muted transition-all group-hover:text-accent group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </div>
 
           {/* Meta */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted">
             <span className="flex items-center gap-1">
               <Building2 className="h-3 w-3" />
               {lead.legalForm}
@@ -71,18 +71,18 @@ export default function LeadCard({ lead }: { lead: Lead }) {
           {/* Tags */}
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <span
-              className="rounded border px-2 py-0.5 text-[10px] font-semibold"
+              className="rounded-md border px-2 py-0.5 text-[11px] font-semibold"
               style={{ borderColor: vColor, color: vColor }}
             >
               {lead.verticalLabel}
             </span>
             {lead.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="rounded border border-border px-2 py-0.5 text-[10px] text-muted">
+              <span key={tag} className="rounded-md border border-border px-2 py-0.5 text-[11px] text-muted">
                 {tag}
               </span>
             ))}
             {lead.enrichment.hasDomain && (
-              <span className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-[10px] text-sub">
+              <span className="flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[11px] text-sub">
                 <Globe className="h-2.5 w-2.5" />
                 web
               </span>
@@ -91,7 +91,7 @@ export default function LeadCard({ lead }: { lead: Lead }) {
 
           {/* Contact */}
           {lead.contact && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-2.5 text-[11px]">
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-[12px]">
               <span className="flex items-center gap-1 text-heading">
                 <User className="h-3 w-3 text-muted" />
                 {lead.contact.firstName} {lead.contact.lastName}
@@ -111,16 +111,16 @@ export default function LeadCard({ lead }: { lead: Lead }) {
         </div>
 
         {/* Score */}
-        <div className="flex flex-col items-center gap-0.5">
+        <div className="flex flex-col items-center gap-1">
           <span className={`font-mono text-lg font-bold ${scoreColor}`}>
             {lead.aiScore}
           </span>
           <div
-            className="h-1 w-6"
+            className="h-1 w-6 rounded-full"
             style={{
               background: `linear-gradient(90deg, ${
-                lead.aiScore >= 75 ? "#22c55e" : lead.aiScore >= 50 ? "#eab308" : "#ef4444"
-              } ${lead.aiScore}%, var(--color-border) ${lead.aiScore}%)`,
+                lead.aiScore >= 75 ? "#16a34a" : lead.aiScore >= 50 ? "#d97706" : "#dc2626"
+              } ${lead.aiScore}%, var(--color-surface) ${lead.aiScore}%)`,
             }}
           />
         </div>
