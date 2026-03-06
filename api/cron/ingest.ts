@@ -142,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               scoring.vertical,
               deepseekKey
             );
-            if (aiResult) {
+            if (aiResult && aiResult.score > scoring.score) {
               scoring = {
                 ...scoring,
                 score: aiResult.score,
