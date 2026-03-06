@@ -26,7 +26,7 @@ export interface Lead {
 export interface ContactInfo {
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
   phone?: string;
   linkedin?: string;
   role: string;
