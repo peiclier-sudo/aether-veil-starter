@@ -67,6 +67,11 @@ function scoreForWebAgency(lead: LeadForScoring): {
   const reasons: string[] = [];
   const tags: string[] = [];
 
+  // Newly created company = immediate need for web presence
+  score += 10;
+  reasons.push("Entreprise nouvellement créée — besoin immédiat de visibilité");
+  tags.push("Nouvelle entreprise");
+
   // No website = high-value prospect
   if (!lead.hasDomain) {
     score += 25;
@@ -80,6 +85,10 @@ function scoreForWebAgency(lead: LeadForScoring): {
     score += 10;
     reasons.push(`Site ${lead.websiteStack[0]} — potentiel refonte`);
     tags.push("Refonte potentielle");
+  } else if (lead.websiteStack.length === 1 && lead.websiteStack[0] === "Custom / inconnu") {
+    score += 5;
+    reasons.push("Site existant (stack inconnue) — vérification recommandée");
+    tags.push("Vérification web");
   }
 
   // B2C activity = needs customer-facing website
@@ -114,9 +123,14 @@ function scoreForAccountant(lead: LeadForScoring): {
   reasons: string[];
   tags: string[];
 } {
-  let score = 25;
+  let score = 30;
   const reasons: string[] = [];
   const tags: string[] = [];
+
+  // Newly created company = accounting obligations from day 1
+  score += 10;
+  reasons.push("Entreprise nouvellement créée — obligations comptables dès J1");
+  tags.push("Nouvelle entreprise");
 
   // Complex legal forms need accountants
   if (COMPLEX_LEGAL_FORMS.some((f) => lead.legalForm.toUpperCase().includes(f))) {
@@ -161,6 +175,11 @@ function scoreForInsurer(lead: LeadForScoring): {
   let score = 30;
   const reasons: string[] = [];
   const tags: string[] = [];
+
+  // Newly created company = insurance coverage needed
+  score += 10;
+  reasons.push("Entreprise nouvellement créée — couverture à mettre en place");
+  tags.push("Nouvelle entreprise");
 
   // Risk activities
   const naf2 = (lead.nafCode || "").slice(0, 2);

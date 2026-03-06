@@ -129,8 +129,9 @@ export async function checkDomain(
 
   const candidates = [`${slug}.fr`, `${slug}.com`];
 
-  for (const domain of candidates) {
-    try {
+  // Check both domains in parallel
+  const results = await Promise.allSettled(
+    candidates.map(async (domain) => {
       const res = await fetch(
         `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,
         {
@@ -138,14 +139,16 @@ export async function checkDomain(
           signal: AbortSignal.timeout(3000),
         }
       );
-      if (!res.ok) continue;
-
+      if (!res.ok) return null;
       const data = await res.json();
-      if (data.Answer && data.Answer.length > 0) {
-        return { hasDomain: true, domain };
-      }
-    } catch {
-      continue;
+      return data.Answer && data.Answer.length > 0 ? domain : null;
+    })
+  );
+
+  // Prefer .fr over .com
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value) {
+      return { hasDomain: true, domain: result.value };
     }
   }
 
@@ -161,7 +164,7 @@ export async function probeWebsite(
 ): Promise<{ hasWebsite: boolean; stack: string[] }> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 3000);
 
     const res = await fetch(`https://${domain}`, {
       method: "GET",
@@ -226,7 +229,8 @@ export function guessEmail(
 export async function enrichLead(
   siren: string,
   companyName: string,
-  inseeToken?: string
+  inseeToken?: string,
+  skipWebProbe = false
 ): Promise<EnrichmentResult> {
   // Run INSEE + DNS in parallel
   const [inseeData, domainResult] = await Promise.all([
@@ -234,11 +238,11 @@ export async function enrichLead(
     checkDomain(companyName),
   ]);
 
-  // If domain found, probe the website
+  // If domain found, probe the website (unless skipped for time budget)
   let hasWebsite = false;
   let websiteStack: string[] = [];
 
-  if (domainResult.hasDomain && domainResult.domain) {
+  if (!skipWebProbe && domainResult.hasDomain && domainResult.domain) {
     const probe = await probeWebsite(domainResult.domain);
     hasWebsite = probe.hasWebsite;
     websiteStack = probe.stack;

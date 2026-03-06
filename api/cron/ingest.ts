@@ -110,8 +110,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const results = await Promise.allSettled(
         batch.map(async (lead) => {
+          // Skip web probes when less than 60s remaining
+          const remainingMs = TIME_BUDGET_MS - (Date.now() - startTime);
+          const skipWebProbe = remainingMs < 60_000;
+
           // Enrich
-          const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken);
+          const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken, skipWebProbe);
           enrichedCount++;
 
           // Score (rule-based first, then optionally DeepSeek)
@@ -120,7 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             legalForm: lead.legalForm,
             capital: lead.capital,
             activity: lead.activity,
-            nafCode: enrichment.nafCode || lead.postalCode, // fallback
+            nafCode: enrichment.nafCode || "",
             city: lead.city,
             region: lead.region,
             hasDomain: enrichment.hasDomain,
