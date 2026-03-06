@@ -90,16 +90,19 @@ function getRegion(postalCode: string): string {
   return REGION_MAP[dept] || "Autre";
 }
 
-function parseCapital(raw?: string): number {
+function parseCapital(raw?: unknown): number {
   if (!raw) return 0;
-  const cleaned = raw.replace(/[^\d.,]/g, "").replace(",", ".");
+  const str = String(raw);
+  const cleaned = str.replace(/[^\d.,]/g, "").replace(",", ".");
   return Math.round(parseFloat(cleaned) || 0);
 }
 
-function extractSiren(registre?: string): string {
+function extractSiren(registre?: unknown): string {
   if (!registre) return "";
+  // Coerce to string — the API may return an object or array
+  const str = typeof registre === "string" ? registre : JSON.stringify(registre);
   // Pattern: "RCS Paris 123 456 789" or "RCS Paris B 123456789"
-  const match = registre.match(/(\d[\d\s]{8,})/);
+  const match = str.match(/(\d[\d\s]{8,})/);
   if (!match) return "";
   return match[1].replace(/\s/g, "").slice(0, 9);
 }
@@ -130,22 +133,22 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
     const records = data.results || [];
 
     for (const record of records) {
-      const companyName = record.denomination || record.commercant || "";
+      const companyName = String(record.denomination || record.commercant || "");
       if (!companyName) continue;
 
-      const postalCode = record.cp || record.numerodepartement || "";
+      const postalCode = String(record.cp || record.numerodepartement || "");
       const siren = extractSiren(record.registre);
 
       allLeads.push({
-        bodaccId: record.id || `bodacc-${offset}`,
+        bodaccId: String(record.id || `bodacc-${offset}`),
         companyName: companyName.trim(),
-        legalForm: record.formejuridique || "",
+        legalForm: String(record.formejuridique || ""),
         capital: parseCapital(record.montantcapital),
-        activity: record.activite || "",
-        city: record.ville || "",
+        activity: String(record.activite || ""),
+        city: String(record.ville || ""),
         postalCode,
         region: getRegion(postalCode),
-        address: record.adresse || "",
+        address: String(record.adresse || ""),
         bodaccDate: date,
         siren,
       });
