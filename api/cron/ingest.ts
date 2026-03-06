@@ -34,6 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const inseeClientId = process.env.INSEE_CLIENT_ID;
   const inseeClientSecret = process.env.INSEE_CLIENT_SECRET;
   const inseeToken = process.env.INSEE_API_TOKEN || (inseeClientId && inseeClientSecret ? `${inseeClientId}:${inseeClientSecret}` : undefined);
+  console.log(`[INGEST] INSEE configured: ${!!inseeToken} (API_TOKEN=${!!process.env.INSEE_API_TOKEN}, CLIENT_ID=${!!inseeClientId}, CLIENT_SECRET=${!!inseeClientSecret})`);
   const deepseekKey = process.env.DEEPSEEK_API_KEY;
 
   // Use yesterday's date (BODACC publishes with 1-day delay)
@@ -266,6 +267,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       elapsed: `${elapsed}s`,
       stats,
       diagnostics: {
+        inseeConfigured: !!inseeToken,
         inseeHits,
         domainHits,
         websiteHits,
