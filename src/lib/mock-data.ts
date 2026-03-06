@@ -193,6 +193,7 @@ function generateLead(index: number): Lead {
   const domain = hasDomain
     ? `${activity.name.toLowerCase().replace(/\s+/g, "-")}-${lastName.toLowerCase()}.fr`
     : undefined;
+  const mxValid = hasDomain ? Math.random() > 0.25 : false;
 
   return {
     id: `lead-${index.toString().padStart(4, "0")}`,
@@ -241,6 +242,8 @@ function generateLead(index: number): Lead {
     enrichment: {
       hasDomain,
       domain,
+      mxValid,
+      mxRecords: mxValid ? [randomItem(["mx1.ovh.net", "alt1.aspmx.l.google.com", "mail.infomaniak.ch", "mx.ionos.fr"])] : [],
       hasWebsite: hasDomain && Math.random() > 0.5,
       websiteStack: hasDomain
         ? randomItem([

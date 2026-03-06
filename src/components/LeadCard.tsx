@@ -4,6 +4,8 @@ import {
   MapPin,
   Calendar,
   Mail,
+  MailCheck,
+  MailX,
   Phone,
   ArrowUpRight,
   Globe,
@@ -85,6 +87,17 @@ export default function LeadCard({ lead }: { lead: Lead }) {
               <span className="flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[11px] text-sub">
                 <Globe className="h-2.5 w-2.5" />
                 web
+              </span>
+            )}
+            {lead.enrichment.mxValid !== undefined && (
+              <span className={`flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] ${
+                lead.enrichment.mxValid
+                  ? "border-score-high/30 text-score-high"
+                  : "border-score-low/30 text-score-low"
+              }`}>
+                {lead.enrichment.mxValid
+                  ? <><MailCheck className="h-2.5 w-2.5" />MX ✓</>
+                  : <><MailX className="h-2.5 w-2.5" />MX ✗</>}
               </span>
             )}
           </div>
