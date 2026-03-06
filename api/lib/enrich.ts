@@ -46,11 +46,14 @@ export async function enrichFromInsee(
 ): Promise<InseeData> {
   if (!siren || siren.length !== 9 || !token) return {};
 
+  const TIMEOUT = 4000; // 4s max per external call
+
   try {
     const res = await fetch(
       `https://api.insee.fr/entreprises/sirene/V3.11/siren/${siren}`,
       {
         headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(TIMEOUT),
       }
     );
 
@@ -68,6 +71,7 @@ export async function enrichFromInsee(
       `https://api.insee.fr/entreprises/sirene/V3.11/siret?q=siren:${siren} AND etablissementSiege:true`,
       {
         headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(TIMEOUT),
       }
     );
 
@@ -131,6 +135,7 @@ export async function checkDomain(
         `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,
         {
           headers: { Accept: "application/dns-json" },
+          signal: AbortSignal.timeout(3000),
         }
       );
       if (!res.ok) continue;
