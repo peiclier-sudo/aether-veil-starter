@@ -37,14 +37,76 @@ interface EnrichmentResult {
 }
 
 /**
+ * INSEE OAuth2 token cache
+ * The token is obtained via client credentials grant and cached until expiry.
+ */
+let inseeTokenCache: { token: string; expiresAt: number } | null = null;
+
+/**
+ * Get a valid INSEE bearer token.
+ * Accepts either:
+ * - A consumer_key:consumer_secret pair (will exchange via OAuth2)
+ * - A raw bearer token (used directly)
+ */
+async function getInseeToken(tokenOrCredentials: string): Promise<string | null> {
+  // If it looks like a key:secret pair, do OAuth2 exchange
+  if (tokenOrCredentials.includes(":")) {
+    // Check cache
+    if (inseeTokenCache && Date.now() < inseeTokenCache.expiresAt) {
+      return inseeTokenCache.token;
+    }
+
+    try {
+      const encoded = Buffer.from(tokenOrCredentials).toString("base64");
+      const res = await fetch("https://api.insee.fr/token", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${encoded}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: "grant_type=client_credentials",
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!res.ok) {
+        console.error(`[INSEE] Token exchange failed: ${res.status} ${res.statusText}`);
+        return null;
+      }
+
+      const data = await res.json();
+      const token = data.access_token;
+      const expiresIn = data.expires_in || 3600;
+
+      // Cache with 60s safety margin
+      inseeTokenCache = {
+        token,
+        expiresAt: Date.now() + (expiresIn - 60) * 1000,
+      };
+
+      console.log(`[INSEE] Token obtained, expires in ${expiresIn}s`);
+      return token;
+    } catch (err) {
+      console.error("[INSEE] Token exchange error:", err);
+      return null;
+    }
+  }
+
+  // Otherwise treat as a raw bearer token
+  return tokenOrCredentials;
+}
+
+/**
  * Fetch company data from INSEE Sirene API
- * Free tier: needs a token from https://portail-api.insee.fr (register → create app → subscribe to API Sirene)
+ * Free tier: needs credentials from https://portail-api.insee.fr (register → create app → subscribe to API Sirene)
  */
 export async function enrichFromInsee(
   siren: string,
-  token?: string
+  tokenOrCredentials?: string
 ): Promise<InseeData> {
-  if (!siren || siren.length !== 9 || !token) return {};
+  if (!siren || siren.length !== 9 || !tokenOrCredentials) return {};
+
+  const token = await getInseeToken(tokenOrCredentials);
+  if (!token) return {};
 
   const TIMEOUT = 4000; // 4s max per external call
 

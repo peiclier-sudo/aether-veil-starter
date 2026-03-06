@@ -30,7 +30,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const supabase = getServiceClient();
-  const inseeToken = process.env.INSEE_API_TOKEN;
+  // Support both INSEE_API_TOKEN (key:secret) and separate INSEE_CLIENT_ID/SECRET
+  const inseeClientId = process.env.INSEE_CLIENT_ID;
+  const inseeClientSecret = process.env.INSEE_CLIENT_SECRET;
+  const inseeToken = process.env.INSEE_API_TOKEN || (inseeClientId && inseeClientSecret ? `${inseeClientId}:${inseeClientSecret}` : undefined);
   const deepseekKey = process.env.DEEPSEEK_API_KEY;
 
   // Use yesterday's date (BODACC publishes with 1-day delay)
