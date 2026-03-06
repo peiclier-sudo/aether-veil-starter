@@ -71,10 +71,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ── Step 3: Process each lead ───────────
     let enrichedCount = 0;
     let scoredCount = 0;
+    let skippedCount = 0;
+
+    // Time budget: stop enriching 30s before Vercel kills us
+    const startTime = Date.now();
+    const TIME_BUDGET_MS = (config.maxDuration - 30) * 1000; // 270s
 
     // Process in batches of 10 to avoid rate limits
     const batchSize = 10;
     for (let i = 0; i < uniqueLeads.length; i += batchSize) {
+      // Check time budget before starting a new batch
+      if (Date.now() - startTime > TIME_BUDGET_MS) {
+        skippedCount = uniqueLeads.length - i;
+        console.log(`[INGEST] Time budget exceeded, inserting ${skippedCount} remaining leads without enrichment`);
+
+        // Bulk-insert remaining leads with basic data (no enrichment)
+        const remaining = uniqueLeads.slice(i).map((lead) => ({
+          siren: lead.siren,
+          siret: lead.siren,
+          company_name: lead.companyName,
+          legal_form: lead.legalForm,
+          activity: lead.activity,
+          capital: lead.capital,
+          city: lead.city,
+          postal_code: lead.postalCode,
+          region: lead.region,
+          address: lead.address,
+          bodacc_id: lead.bodaccId,
+          bodacc_date: lead.bodaccDate,
+          enrichment_status: "pending",
+          scoring_status: "pending",
+        }));
+        await supabase.from("leads").upsert(remaining, { onConflict: "bodacc_id" });
+        break;
+      }
+
       const batch = uniqueLeads.slice(i, i + batchSize);
 
       const results = await Promise.allSettled(
@@ -163,7 +194,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Small delay between batches to respect rate limits
       if (i + batchSize < uniqueLeads.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
 
@@ -194,7 +225,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       .eq("id", run?.id);
 
-    console.log(`[INGEST] Done! ${uniqueLeads.length} leads processed (${enrichedCount} enriched, ${scoredCount} scored)`);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`[INGEST] Done in ${elapsed}s! ${uniqueLeads.length} leads (${enrichedCount} enriched, ${scoredCount} scored, ${skippedCount} skipped)`);
 
     return res.json({
       status: "ok",
@@ -203,6 +235,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       unique: uniqueLeads.length,
       enriched: enrichedCount,
       scored: scoredCount,
+      skipped: skippedCount,
+      elapsed: `${elapsed}s`,
       stats,
     });
   } catch (error) {
