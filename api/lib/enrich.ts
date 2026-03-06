@@ -36,95 +36,33 @@ interface EnrichmentResult {
   guessedEmail?: string;
 }
 
-/**
- * INSEE OAuth2 token cache
- * The token is obtained via client credentials grant and cached until expiry.
- */
-let inseeTokenCache: { token: string; expiresAt: number } | null = null;
-
-/**
- * Get a valid INSEE bearer token.
- * Accepts either:
- * - A consumer_key:consumer_secret pair (will exchange via OAuth2)
- * - A raw bearer token (used directly)
- */
 // Track last error for diagnostics
 export let lastInseeError: string | null = null;
 
-async function getInseeToken(tokenOrCredentials: string): Promise<string | null> {
-  // If it looks like a key:secret pair, do OAuth2 exchange
-  if (tokenOrCredentials.includes(":")) {
-    // Check cache
-    if (inseeTokenCache && Date.now() < inseeTokenCache.expiresAt) {
-      return inseeTokenCache.token;
-    }
-
-    try {
-      const encoded = Buffer.from(tokenOrCredentials).toString("base64");
-      const res = await fetch("https://api.insee.fr/token", {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${encoded}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: "grant_type=client_credentials",
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        lastInseeError = `Token exchange failed: ${res.status} ${res.statusText} — ${body.slice(0, 200)}`;
-        console.error(`[INSEE] ${lastInseeError}`);
-        return null;
-      }
-
-      const data = await res.json();
-      const token = data.access_token;
-      const expiresIn = data.expires_in || 3600;
-
-      // Cache with 60s safety margin
-      inseeTokenCache = {
-        token,
-        expiresAt: Date.now() + (expiresIn - 60) * 1000,
-      };
-
-      lastInseeError = null;
-      console.log(`[INSEE] Token obtained, expires in ${expiresIn}s`);
-      return token;
-    } catch (err) {
-      lastInseeError = `Token exchange error: ${err instanceof Error ? err.message : String(err)}`;
-      console.error(`[INSEE] ${lastInseeError}`);
-      return null;
-    }
-  }
-
-  // Otherwise treat as a raw bearer token
-  return tokenOrCredentials;
-}
+const INSEE_API_BASE = "https://api.insee.fr/api-sirene/3.11";
 
 /**
- * Fetch company data from INSEE Sirene API
- * Free tier: needs credentials from https://portail-api.insee.fr (register → create app → subscribe to API Sirene)
+ * Fetch company data from INSEE Sirene API (new portal)
+ * Uses API key auth via X-INSEE-Api-Key-Integration header.
+ * Register at https://portail-api.insee.fr → create app → subscribe to API Sirene
  */
 export async function enrichFromInsee(
   siren: string,
-  tokenOrCredentials?: string
+  apiKey?: string
 ): Promise<InseeData> {
-  if (!siren || siren.length !== 9 || !tokenOrCredentials) return {};
+  if (!siren || siren.length !== 9 || !apiKey) return {};
 
-  const token = await getInseeToken(tokenOrCredentials);
-  if (!token) return {};
-
-  const TIMEOUT = 4000; // 4s max per external call
+  const TIMEOUT = 4000;
+  const headers = {
+    "X-INSEE-Api-Key-Integration": apiKey,
+    Accept: "application/json",
+  };
 
   try {
-    const res = await fetch(
-      `https://api.insee.fr/entreprises/sirene/V3.11/siren/${siren}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(TIMEOUT),
-      }
-    );
+    const res = await fetch(`${INSEE_API_BASE}/siren/${siren}`, {
+      headers,
+      signal: AbortSignal.timeout(TIMEOUT),
+    });
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
@@ -132,6 +70,8 @@ export async function enrichFromInsee(
       console.error(`[INSEE] ${lastInseeError}`);
       return {};
     }
+
+    lastInseeError = null;
 
     const data = await res.json();
     const unit = data.uniteLegale;
@@ -142,9 +82,9 @@ export async function enrichFromInsee(
 
     // Get the establishment (siège)
     const siegeRes = await fetch(
-      `https://api.insee.fr/entreprises/sirene/V3.11/siret?q=siren:${siren} AND etablissementSiege:true`,
+      `${INSEE_API_BASE}/siret?q=siren:${siren} AND etablissementSiege:true`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
         signal: AbortSignal.timeout(TIMEOUT),
       }
     );
