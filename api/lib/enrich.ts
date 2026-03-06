@@ -18,12 +18,21 @@ interface InseeData {
   creationDate?: string;
 }
 
+interface InpiDirigeant {
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
 interface EnrichmentResult {
   // INSEE
   nafCode?: string;
   activityLabel?: string;
   employeeEstimate?: string;
   creationDate?: string;
+
+  // INPI dirigeant
+  dirigeant?: InpiDirigeant;
 
   // Web presence
   hasDomain: boolean;
@@ -123,6 +132,124 @@ export async function enrichFromInsee(
   } catch {
     return {};
   }
+}
+
+// ── INPI RNE API — dirigeant names (free) ──────────────────────
+
+const INPI_API_BASE = "https://registre-national-entreprises.inpi.fr/api";
+
+let inpiToken: string | null = null;
+let inpiTokenExpiry = 0;
+
+export let lastInpiError: string | null = null;
+
+/**
+ * Authenticate with INPI RNE API and cache the JWT token.
+ * Token is refreshed 5 min before expiry.
+ */
+async function getInpiToken(
+  username: string,
+  password: string
+): Promise<string | null> {
+  if (inpiToken && Date.now() < inpiTokenExpiry) return inpiToken;
+
+  try {
+    const res = await fetch(`${INPI_API_BASE}/sso/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!res.ok) {
+      lastInpiError = `INPI login failed: ${res.status} ${res.statusText}`;
+      console.error(`[INPI] ${lastInpiError}`);
+      return null;
+    }
+
+    const data = await res.json();
+    inpiToken = data.token;
+    // Refresh 5 min before expiry (tokens typically last 1h)
+    inpiTokenExpiry = Date.now() + 55 * 60 * 1000;
+    lastInpiError = null;
+    return inpiToken;
+  } catch {
+    lastInpiError = "INPI login timeout or network error";
+    return null;
+  }
+}
+
+/**
+ * Fetch dirigeant (représentant) info from INPI RNE API.
+ * Returns the first physical-person dirigeant found (président, gérant, etc.)
+ */
+export async function enrichFromInpi(
+  siren: string,
+  username?: string,
+  password?: string
+): Promise<InpiDirigeant | null> {
+  if (!siren || siren.length !== 9 || !username || !password) return null;
+
+  const token = await getInpiToken(username, password);
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${INPI_API_BASE}/companies/${siren}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!res.ok) {
+      if (res.status === 404) return null; // Company not yet in RNE
+      lastInpiError = `INPI company fetch failed: ${res.status}`;
+      console.error(`[INPI] ${lastInpiError}`);
+      return null;
+    }
+
+    lastInpiError = null;
+    const data = await res.json();
+
+    // Navigate the RNE JSON structure to find dirigeants
+    // The structure contains formality data with "composition" holding powers/roles
+    const compositions =
+      data.formality?.content?.personnesMorales?.[0]?.composition?.pouvoirs ??
+      data.formality?.content?.personnesPhysiques?.[0]?.composition?.pouvoirs ??
+      [];
+
+    // Also check the top-level representants field (varies by API version)
+    const representants = data.representants ?? [];
+
+    // Try representants first (cleaner structure)
+    for (const rep of representants) {
+      if (rep.nom && rep.prenoms) {
+        return {
+          firstName: capitalize(rep.prenoms.split(/[\s,]+/)[0] || ""),
+          lastName: capitalize(rep.nom),
+          role: rep.qualite || rep.role || "Dirigeant",
+        };
+      }
+    }
+
+    // Fall back to composition/pouvoirs
+    for (const pouvoir of compositions) {
+      const individu = pouvoir.individu || pouvoir;
+      if (individu.nom && individu.prenoms) {
+        return {
+          firstName: capitalize(individu.prenoms.split(/[\s,]+/)[0] || ""),
+          lastName: capitalize(individu.nom),
+          role: pouvoir.roleEnEntreprise || pouvoir.qualite || "Dirigeant",
+        };
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
 /**
@@ -244,12 +371,16 @@ export async function enrichLead(
   siren: string,
   companyName: string,
   inseeToken?: string,
-  skipWebProbe = false
+  skipWebProbe = false,
+  inpiCredentials?: { username: string; password: string }
 ): Promise<EnrichmentResult> {
-  // Run INSEE + DNS in parallel
-  const [inseeData, domainResult] = await Promise.all([
+  // Run INSEE + DNS + INPI in parallel
+  const [inseeData, domainResult, dirigeant] = await Promise.all([
     enrichFromInsee(siren, inseeToken),
     checkDomain(companyName),
+    inpiCredentials
+      ? enrichFromInpi(siren, inpiCredentials.username, inpiCredentials.password)
+      : Promise.resolve(null),
   ]);
 
   // If domain found, probe the website (unless skipped for time budget)
@@ -262,15 +393,23 @@ export async function enrichLead(
     websiteStack = probe.stack;
   }
 
+  // Guess email if we have dirigeant name + domain
+  const guessedEmail =
+    dirigeant && domainResult.domain
+      ? guessEmail(dirigeant.firstName, dirigeant.lastName, domainResult.domain)
+      : undefined;
+
   return {
     nafCode: inseeData.nafCode,
     activityLabel: inseeData.activity,
     employeeEstimate: inseeData.employeeRange,
     creationDate: inseeData.creationDate,
+    dirigeant: dirigeant || undefined,
     hasDomain: domainResult.hasDomain,
     domain: domainResult.domain,
     hasWebsite,
     websiteStack,
     socialPresence: [],
+    guessedEmail,
   };
 }
