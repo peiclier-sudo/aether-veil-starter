@@ -30,11 +30,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const supabase = getServiceClient();
-  // Support both INSEE_API_TOKEN (key:secret) and separate INSEE_CLIENT_ID/SECRET
-  const inseeClientId = process.env.INSEE_CLIENT_ID;
-  const inseeClientSecret = process.env.INSEE_CLIENT_SECRET;
-  const inseeToken = process.env.INSEE_API_TOKEN || (inseeClientId && inseeClientSecret ? `${inseeClientId}:${inseeClientSecret}` : undefined);
-  console.log(`[INGEST] INSEE configured: ${!!inseeToken} (API_TOKEN=${!!process.env.INSEE_API_TOKEN}, CLIENT_ID=${!!inseeClientId}, CLIENT_SECRET=${!!inseeClientSecret})`);
+  // INSEE API key from new portal (portail-api.insee.fr)
+  const inseeToken = process.env.INSEE_API_KEY;
+  console.log(`[INGEST] INSEE configured: ${!!inseeToken}`);
   const deepseekKey = process.env.DEEPSEEK_API_KEY;
 
   // Use yesterday's date (BODACC publishes with 1-day delay)
