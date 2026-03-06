@@ -72,6 +72,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let enrichedCount = 0;
     let scoredCount = 0;
     let skippedCount = 0;
+    let inseeHits = 0;
+    let domainHits = 0;
+    let websiteHits = 0;
+    const sampleLeads: Array<{ name: string; siren: string; nafCode: string; hasDomain: boolean; hasWebsite: boolean; score: number; vertical: string }> = [];
 
     // Time budget: stop enriching 30s before Vercel kills us
     const startTime = Date.now();
@@ -117,6 +121,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // Enrich
           const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken, skipWebProbe);
           enrichedCount++;
+          if (enrichment.nafCode) inseeHits++;
+          if (enrichment.hasDomain) domainHits++;
+          if (enrichment.hasWebsite) websiteHits++;
 
           // Score (rule-based first, then optionally DeepSeek)
           const leadForScoring = {
@@ -152,6 +159,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           }
           scoredCount++;
+
+          // Capture first 5 leads for diagnostics
+          if (sampleLeads.length < 5) {
+            sampleLeads.push({
+              name: lead.companyName,
+              siren: lead.siren,
+              nafCode: enrichment.nafCode || "",
+              hasDomain: enrichment.hasDomain,
+              hasWebsite: enrichment.hasWebsite,
+              score: scoring.score,
+              vertical: scoring.vertical,
+            });
+          }
 
           // Insert into Supabase
           return supabase.from("leads").upsert(
@@ -242,6 +262,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       skipped: skippedCount,
       elapsed: `${elapsed}s`,
       stats,
+      diagnostics: {
+        inseeHits,
+        domainHits,
+        websiteHits,
+        sampleLeads,
+      },
     });
   } catch (error) {
     console.error("[INGEST] Pipeline error:", error);
