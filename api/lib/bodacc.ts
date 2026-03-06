@@ -116,11 +116,10 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
   let hasMore = true;
 
   while (hasMore) {
-    // V2.1 API with SQL-like where clause
-    const where = encodeURIComponent(
-      `dateparution='${date}' AND familleavis_lib='Immatriculation'`
-    );
-    const url = `${BASE_URL}?where=${where}&limit=${limit}&offset=${offset}&order_by=dateparution%20DESC`;
+    // V2.1 API with ODSQL where clause + refine facet
+    const where = encodeURIComponent(`dateparution=date'${date}'`);
+    const refine = encodeURIComponent("familleavis:immatriculation");
+    const url = `${BASE_URL}?where=${where}&refine=${refine}&limit=${limit}&offset=${offset}&order_by=dateparution%20DESC`;
 
     const res = await fetch(url);
     if (!res.ok) {
