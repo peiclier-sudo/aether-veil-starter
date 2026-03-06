@@ -11,10 +11,10 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getServiceClient } from "../lib/supabase-server";
-import { fetchBodaccCreations } from "../lib/bodacc";
-import { enrichLead } from "../lib/enrich";
-import { ruleBasedScore, deepseekScore } from "../lib/scoring";
+import { getServiceClient } from "../lib/supabase-server.js";
+import { fetchBodaccCreations } from "../lib/bodacc.js";
+import { enrichLead } from "../lib/enrich.js";
+import { ruleBasedScore, deepseekScore } from "../lib/scoring.js";
 
 export const config = {
   // Vercel cron: run daily at 6:00 UTC
