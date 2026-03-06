@@ -13,7 +13,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getServiceClient } from "../lib/supabase-server.js";
 import { fetchBodaccCreations } from "../lib/bodacc.js";
-import { enrichLead } from "../lib/enrich.js";
+import { enrichLead, lastInseeError } from "../lib/enrich.js";
 import { ruleBasedScore, deepseekScore } from "../lib/scoring.js";
 
 export const config = {
@@ -268,6 +268,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       stats,
       diagnostics: {
         inseeConfigured: !!inseeToken,
+        inseeError: lastInseeError,
         inseeHits,
         domainHits,
         websiteHits,
