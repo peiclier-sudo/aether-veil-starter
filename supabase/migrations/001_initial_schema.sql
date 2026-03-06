@@ -31,6 +31,8 @@ create table if not exists leads (
   -- Enrichment
   has_domain    boolean default false,
   domain        text,
+  mx_valid      boolean,
+  mx_records    text[] default '{}',
   has_website   boolean default false,
   website_stack text[] default '{}',
   social_presence text[] default '{}',

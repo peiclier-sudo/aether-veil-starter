@@ -14,6 +14,8 @@ import {
   Users,
   Check,
   X,
+  MailCheck,
+  MailX,
 } from "lucide-react";
 import { mockLeads } from "@/lib/mock-data";
 import { formatCurrency, relativeDate } from "@/lib/utils";
@@ -155,6 +157,14 @@ export default function LeadDetail() {
                     </div>
                     {lead.enrichment.websiteStack && lead.enrichment.websiteStack.length > 0 && (
                       <div className="flex justify-between"><span className="text-muted">Stack</span><span className="text-sub">{lead.enrichment.websiteStack.join(", ")}</span></div>
+                    )}
+                    {lead.enrichment.mxValid !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-muted">Email (MX)</span>
+                        {lead.enrichment.mxValid
+                          ? <span className="flex items-center gap-1 text-score-high"><MailCheck className="h-3.5 w-3.5" />Validé{lead.enrichment.mxRecords?.length ? ` (${lead.enrichment.mxRecords[0]})` : ""}</span>
+                          : <span className="flex items-center gap-1 text-score-low"><MailX className="h-3.5 w-3.5" />Pas de serveur mail</span>}
+                      </div>
                     )}
                   </div>
                 ) : (
