@@ -24,6 +24,12 @@ interface BodaccRecord {
   numerodepartement?: string;
 }
 
+export interface BodaccDirigeant {
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
 export interface BodaccLead {
   bodaccId: string;
   companyName: string;
@@ -36,6 +42,7 @@ export interface BodaccLead {
   address: string;
   bodaccDate: string;
   siren: string;
+  dirigeant?: BodaccDirigeant;
 }
 
 const BASE_URL =
@@ -107,6 +114,188 @@ function extractSiren(registre?: unknown): string {
   return match[1].replace(/\s/g, "").slice(0, 9);
 }
 
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+/**
+ * Extract dirigeant (gérant/président) from BODACC record.
+ *
+ * The BODACC API may provide person data in several ways:
+ * 1. `listepersonnes` — structured person list (JSON string or object)
+ * 2. `commercant` — for personnes physiques, contains "Nom, Prénoms"
+ * 3. Raw text fields like `descriptif` containing "Gérant : Nom, Prénoms"
+ *
+ * We try all available sources.
+ */
+function extractDirigeant(record: Record<string, unknown>): BodaccDirigeant | undefined {
+  // ── Source 1: listepersonnes field (structured data) ──
+  const lp = record.listepersonnes;
+  if (lp) {
+    const parsed = typeof lp === "string" ? tryParseJson(lp) : lp;
+    const person = extractPersonFromList(parsed);
+    if (person) return person;
+  }
+
+  // ── Source 2: Parse "Gérant : Nom, Prénoms" from descriptif or text fields ──
+  for (const field of ["descriptif", "description", "texte", "contenu"]) {
+    const text = record[field];
+    if (typeof text === "string") {
+      const person = extractDirigeantFromText(text);
+      if (person) return person;
+    }
+  }
+
+  // ── Source 3: commercant field for personnes physiques ──
+  // Format is typically "NOM, Prénom1 Prénom2" (e.g., "HENNI, Yhaniss Rani Mohammed")
+  // Only use this if denomination exists (meaning commercant is the person, not the company)
+  if (record.denomination && record.commercant) {
+    const commercant = String(record.commercant).trim();
+    const person = parseNameString(commercant, "Dirigeant");
+    if (person) return person;
+  }
+
+  return undefined;
+}
+
+/**
+ * Parse "Gérant : Nom, Prénoms" or "Président : Nom, Prénoms" from free text.
+ * Also handles "Mandataires sociaux : Gérant : Nom, Prénoms"
+ */
+function extractDirigeantFromText(text: string): BodaccDirigeant | undefined {
+  // Patterns like "Gérant : HENNI, Yhaniss" or "Président : DUPONT, Jean Pierre"
+  const rolePatterns = [
+    /(?:Mandataires?\s+sociaux\s*:\s*)?(?:G[ée]rant|Pr[ée]sident(?:\s+du\s+conseil\s+d'administration)?|Directeur\s+g[ée]n[ée]ral|Pr[ée]sident\s+directeur\s+g[ée]n[ée]ral)\s*:\s*([^;.\n]+)/i,
+  ];
+
+  for (const pattern of rolePatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      // Extract the role from the matched text
+      const roleMatch = text.match(/(G[ée]rant|Pr[ée]sident(?:\s+du\s+conseil\s+d'administration)?|Directeur\s+g[ée]n[ée]ral|Pr[ée]sident\s+directeur\s+g[ée]n[ée]ral)/i);
+      const role = roleMatch ? capitalizeRole(roleMatch[1]) : "Dirigeant";
+      const nameStr = match[1].trim();
+      const person = parseNameString(nameStr, role);
+      if (person) return person;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Parse a name string like "HENNI, Yhaniss Rani Mohammed" or "Nom Prénom"
+ */
+function parseNameString(nameStr: string, role: string): BodaccDirigeant | undefined {
+  if (!nameStr || nameStr.length < 2) return undefined;
+
+  // Format: "NOM, Prénom1 Prénom2..."
+  if (nameStr.includes(",")) {
+    const parts = nameStr.split(",").map((s) => s.trim());
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      const firstName = capitalize(parts[1].split(/\s+/)[0]);
+      const lastName = capitalize(parts[0]);
+      return { firstName, lastName, role };
+    }
+  }
+
+  // Format: "Prénom NOM" (less common but possible)
+  const words = nameStr.trim().split(/\s+/);
+  if (words.length >= 2) {
+    // Heuristic: if last word is all uppercase, it's the last name
+    const lastWord = words[words.length - 1];
+    if (lastWord === lastWord.toUpperCase() && lastWord.length > 1) {
+      return {
+        firstName: capitalize(words[0]),
+        lastName: capitalize(lastWord),
+        role,
+      };
+    }
+    // Otherwise assume "FIRSTNAME LASTNAME"
+    return {
+      firstName: capitalize(words[0]),
+      lastName: capitalize(words[words.length - 1]),
+      role,
+    };
+  }
+
+  return undefined;
+}
+
+function capitalizeRole(role: string): string {
+  return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()
+    .replace(/président/i, "Président")
+    .replace(/gérant/i, "Gérant")
+    .replace(/directeur/i, "Directeur");
+}
+
+/**
+ * Extract person info from the listepersonnes structure.
+ * The structure varies but commonly looks like:
+ * - Array of objects with nom, prenom, qualite/role
+ * - Object with personnePhysique/personneMorale entries
+ */
+function extractPersonFromList(data: unknown): BodaccDirigeant | undefined {
+  if (!data) return undefined;
+
+  // If it's an array, iterate to find a physical person
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const person = extractSinglePerson(item);
+      if (person) return person;
+    }
+    return undefined;
+  }
+
+  // If it's an object, check common structures
+  if (typeof data === "object" && data !== null) {
+    const obj = data as Record<string, unknown>;
+
+    // Check for nested person arrays
+    for (const key of ["personnePhysique", "personne_physique", "personnes", "personne"]) {
+      if (obj[key]) {
+        const items = Array.isArray(obj[key]) ? obj[key] : [obj[key]];
+        for (const item of items as unknown[]) {
+          const person = extractSinglePerson(item);
+          if (person) return person;
+        }
+      }
+    }
+
+    // Try the object itself as a person
+    return extractSinglePerson(obj);
+  }
+
+  return undefined;
+}
+
+function extractSinglePerson(item: unknown): BodaccDirigeant | undefined {
+  if (!item || typeof item !== "object") return undefined;
+  const obj = item as Record<string, unknown>;
+
+  const nom = obj.nom || obj.Nom || obj.name || obj.lastName;
+  const prenom = obj.prenom || obj.Prenom || obj.prenoms || obj.Prenoms || obj.firstName;
+  const role = obj.qualite || obj.Qualite || obj.role || obj.fonction || obj.Fonction || "Dirigeant";
+
+  if (typeof nom === "string" && nom.length > 0) {
+    return {
+      firstName: typeof prenom === "string" ? capitalize(prenom.split(/[\s,]+/)[0]) : "",
+      lastName: capitalize(nom),
+      role: typeof role === "string" ? role : "Dirigeant",
+    };
+  }
+
+  return undefined;
+}
+
+function tryParseJson(str: string): unknown {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Fetch BODACC immatriculations for a given date
  * @param date - ISO date string (YYYY-MM-DD)
@@ -132,12 +321,28 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
     const data = await res.json();
     const records = data.results || [];
 
+    // Log first record fields for diagnostics (helps discover new API fields)
+    if (offset === 0 && records.length > 0) {
+      console.log("[BODACC] Sample record fields:", Object.keys(records[0]).join(", "));
+    }
+
     for (const record of records) {
       const companyName = String(record.denomination || record.commercant || "");
       if (!companyName) continue;
 
       const postalCode = String(record.cp || record.numerodepartement || "");
       const siren = extractSiren(record.registre);
+
+      // Build full address from available fields
+      const addressParts = [
+        record.adresse,
+        record.cp,
+        record.ville,
+      ].filter(Boolean).map(String);
+      const fullAddress = addressParts.join(" ").trim() || String(record.adresse || "");
+
+      // Extract dirigeant directly from BODACC data
+      const dirigeant = extractDirigeant(record as Record<string, unknown>);
 
       allLeads.push({
         bodaccId: String(record.id || `bodacc-${offset}`),
@@ -148,9 +353,10 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
         city: String(record.ville || ""),
         postalCode,
         region: getRegion(postalCode),
-        address: String(record.adresse || ""),
+        address: fullAddress,
         bodaccDate: date,
         siren,
+        dirigeant,
       });
     }
 

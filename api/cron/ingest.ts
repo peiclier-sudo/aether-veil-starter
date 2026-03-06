@@ -84,6 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let skippedCount = 0;
     let inseeHits = 0;
     let inpiHits = 0;
+    let bodaccDirigeantHits = 0;
     let domainHits = 0;
     let websiteHits = 0;
     const sampleLeads: Array<{ name: string; siren: string; nafCode: string; hasDomain: boolean; hasWebsite: boolean; score: number; vertical: string }> = [];
@@ -134,8 +135,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           enrichedCount++;
           if (enrichment.nafCode) inseeHits++;
           if (enrichment.dirigeant) inpiHits++;
+          if (lead.dirigeant) bodaccDirigeantHits++;
           if (enrichment.hasDomain) domainHits++;
           if (enrichment.hasWebsite) websiteHits++;
+
+          // Use BODACC dirigeant as primary, INPI as fallback
+          const dirigeant = lead.dirigeant || enrichment.dirigeant;
 
           // Score (rule-based first, then optionally DeepSeek)
           const leadForScoring = {
@@ -185,6 +190,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
           }
 
+          // Guess email using whichever dirigeant source we have
+          const guessedEmail =
+            dirigeant && enrichment.domain
+              ? `${dirigeant.firstName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}.${dirigeant.lastName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}@${enrichment.domain}`
+              : enrichment.guessedEmail || null;
+
           // Insert into Supabase
           return supabase.from("leads").upsert(
             {
@@ -211,10 +222,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               website_stack: enrichment.websiteStack,
               social_presence: enrichment.socialPresence,
               employee_estimate: enrichment.employeeEstimate || null,
-              contact_first_name: enrichment.dirigeant?.firstName || null,
-              contact_last_name: enrichment.dirigeant?.lastName || null,
-              contact_role: enrichment.dirigeant?.role || null,
-              contact_email: enrichment.guessedEmail || null,
+              contact_first_name: dirigeant?.firstName || null,
+              contact_last_name: dirigeant?.lastName || null,
+              contact_role: dirigeant?.role || null,
+              contact_email: guessedEmail,
               outreach_angle: scoring.outreachAngle,
               tags: scoring.tags,
               enrichment_status: "enriched",
@@ -285,6 +296,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         inpiConfigured: !!inpiCredentials,
         inpiError: lastInpiError,
         inpiHits,
+        bodaccDirigeantHits,
         domainHits,
         websiteHits,
         sampleLeads,
