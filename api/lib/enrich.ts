@@ -48,6 +48,9 @@ let inseeTokenCache: { token: string; expiresAt: number } | null = null;
  * - A consumer_key:consumer_secret pair (will exchange via OAuth2)
  * - A raw bearer token (used directly)
  */
+// Track last error for diagnostics
+export let lastInseeError: string | null = null;
+
 async function getInseeToken(tokenOrCredentials: string): Promise<string | null> {
   // If it looks like a key:secret pair, do OAuth2 exchange
   if (tokenOrCredentials.includes(":")) {
@@ -69,7 +72,9 @@ async function getInseeToken(tokenOrCredentials: string): Promise<string | null>
       });
 
       if (!res.ok) {
-        console.error(`[INSEE] Token exchange failed: ${res.status} ${res.statusText}`);
+        const body = await res.text().catch(() => "");
+        lastInseeError = `Token exchange failed: ${res.status} ${res.statusText} — ${body.slice(0, 200)}`;
+        console.error(`[INSEE] ${lastInseeError}`);
         return null;
       }
 
@@ -83,10 +88,12 @@ async function getInseeToken(tokenOrCredentials: string): Promise<string | null>
         expiresAt: Date.now() + (expiresIn - 60) * 1000,
       };
 
+      lastInseeError = null;
       console.log(`[INSEE] Token obtained, expires in ${expiresIn}s`);
       return token;
     } catch (err) {
-      console.error("[INSEE] Token exchange error:", err);
+      lastInseeError = `Token exchange error: ${err instanceof Error ? err.message : String(err)}`;
+      console.error(`[INSEE] ${lastInseeError}`);
       return null;
     }
   }
@@ -119,7 +126,12 @@ export async function enrichFromInsee(
       }
     );
 
-    if (!res.ok) return {};
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      lastInseeError = `API call failed: ${res.status} ${res.statusText} — ${body.slice(0, 200)}`;
+      console.error(`[INSEE] ${lastInseeError}`);
+      return {};
+    }
 
     const data = await res.json();
     const unit = data.uniteLegale;
