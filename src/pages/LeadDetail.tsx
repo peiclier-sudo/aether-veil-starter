@@ -153,7 +153,7 @@ export default function LeadDetail() {
                       <span className="flex items-center gap-1 text-heading">
                         {lead.enrichment.domain}
                         {lead.enrichment.domainVerified
-                          ? <Check className="h-3.5 w-3.5 text-score-high" title="Vérifié" />
+                          ? <span title="Vérifié"><Check className="h-3.5 w-3.5 text-score-high" /></span>
                           : <span className="text-[11px] text-warning" title="Non vérifié — le domaine existe mais n'a pas été confirmé comme appartenant à cette entreprise">?</span>}
                       </span>
                     </div>
