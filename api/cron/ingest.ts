@@ -212,7 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               address: lead.address,
               bodacc_id: lead.bodaccId,
               bodacc_date: lead.bodaccDate,
-              creation_date: enrichment.creationDate || lead.bodaccDate,
+              creation_date: lead.creationDate || enrichment.creationDate || lead.bodaccDate,
               vertical: scoring.vertical,
               ai_score: scoring.score,
               score_reasons: scoring.reasons,
