@@ -21,6 +21,7 @@ export interface DbLead {
   score_reasons: string[];
   has_domain: boolean;
   domain: string | null;
+  domain_verified: boolean | null;
   mx_valid: boolean | null;
   mx_records: string[];
   has_website: boolean;
@@ -92,6 +93,7 @@ export function dbLeadToFrontend(db: DbLead) {
     enrichment: {
       hasDomain: db.has_domain,
       domain: db.domain || undefined,
+      domainVerified: db.domain_verified ?? undefined,
       mxValid: db.mx_valid ?? undefined,
       mxRecords: db.mx_records || [],
       hasWebsite: db.has_website,
