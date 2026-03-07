@@ -23,6 +23,7 @@ export interface BodaccDirigeant {
 export interface BodaccLead {
   bodaccId: string;
   companyName: string;
+  nomCommercial?: string;
   legalForm: string;
   capital: number;
   activity: string;
@@ -362,12 +363,19 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
         dirigeant = extractDirigeantFromPP(personne);
       }
 
+      // ── Nom commercial (alternative trading name) ──
+      const nomCommercial =
+        personne?.nomCommercial && personne.nomCommercial !== companyName
+          ? personne.nomCommercial.trim()
+          : undefined;
+
       // ── Creation date ──
       const creationDate = acte.dateImmatriculation || acte.dateCommencementActivite;
 
       allLeads.push({
         bodaccId: String(record.id || `bodacc-${offset}`),
         companyName: companyName.trim(),
+        nomCommercial,
         legalForm,
         capital,
         activity,

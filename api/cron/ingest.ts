@@ -13,7 +13,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getServiceClient } from "../lib/supabase-server.js";
 import { fetchBodaccCreations } from "../lib/bodacc.js";
-import { enrichLead, lastInseeError, lastInpiError } from "../lib/enrich.js";
+import { enrichLead, guessEmail, lastInseeError } from "../lib/enrich.js";
 import { ruleBasedScore, deepseekScore } from "../lib/scoring.js";
 
 export const config = {
@@ -33,13 +33,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // INSEE API key from new portal (portail-api.insee.fr)
   const inseeToken = process.env.INSEE_API_KEY;
   console.log(`[INGEST] INSEE configured: ${!!inseeToken}`);
-
-  // INPI RNE credentials (free — register at https://data.inpi.fr)
-  const inpiUsername = process.env.INPI_USERNAME;
-  const inpiPassword = process.env.INPI_PASSWORD;
-  const inpiCredentials =
-    inpiUsername && inpiPassword ? { username: inpiUsername, password: inpiPassword } : undefined;
-  console.log(`[INGEST] INPI configured: ${!!inpiCredentials}`);
 
   const deepseekKey = process.env.DEEPSEEK_API_KEY;
 
@@ -83,7 +76,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let scoredCount = 0;
     let skippedCount = 0;
     let inseeHits = 0;
-    let inpiHits = 0;
     let bodaccDirigeantHits = 0;
     let domainHits = 0;
     let websiteHits = 0;
@@ -130,17 +122,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const remainingMs = TIME_BUDGET_MS - (Date.now() - startTime);
           const skipWebProbe = remainingMs < 60_000;
 
-          // Enrich
-          const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken, skipWebProbe, inpiCredentials);
+          // Enrich (INSEE + DNS + web probe — INPI removed, BODACC provides dirigeant)
+          const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken, skipWebProbe, lead.nomCommercial);
           enrichedCount++;
           if (enrichment.nafCode) inseeHits++;
-          if (enrichment.dirigeant) inpiHits++;
           if (lead.dirigeant) bodaccDirigeantHits++;
           if (enrichment.hasDomain) domainHits++;
           if (enrichment.hasWebsite) websiteHits++;
 
-          // Use BODACC dirigeant as primary, INPI as fallback
-          const dirigeant = lead.dirigeant || enrichment.dirigeant;
+          const dirigeant = lead.dirigeant;
 
           // Score (rule-based first, then optionally DeepSeek)
           const leadForScoring = {
@@ -190,11 +180,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
           }
 
-          // Guess email using whichever dirigeant source we have
-          const guessedEmail =
-            dirigeant && enrichment.domain
-              ? `${dirigeant.firstName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}.${dirigeant.lastName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}@${enrichment.domain}`
-              : enrichment.guessedEmail || null;
+          // Guess email with MX validation
+          const guessedEmail = await guessEmail(
+            dirigeant?.firstName || "",
+            dirigeant?.lastName || "",
+            enrichment.domain
+          ) || null;
 
           // Insert into Supabase
           return supabase.from("leads").upsert(
@@ -293,9 +284,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         inseeConfigured: !!inseeToken,
         inseeError: lastInseeError,
         inseeHits,
-        inpiConfigured: !!inpiCredentials,
-        inpiError: lastInpiError,
-        inpiHits,
         bodaccDirigeantHits,
         domainHits,
         websiteHits,

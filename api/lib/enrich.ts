@@ -18,21 +18,12 @@ interface InseeData {
   creationDate?: string;
 }
 
-interface InpiDirigeant {
-  firstName: string;
-  lastName: string;
-  role: string;
-}
-
 interface EnrichmentResult {
   // INSEE
   nafCode?: string;
   activityLabel?: string;
   employeeEstimate?: string;
   creationDate?: string;
-
-  // INPI dirigeant
-  dirigeant?: InpiDirigeant;
 
   // Web presence
   hasDomain: boolean;
@@ -134,145 +125,93 @@ export async function enrichFromInsee(
   }
 }
 
-// ── INPI RNE API — dirigeant names (free) ──────────────────────
-
-const INPI_API_BASE = "https://registre-national-entreprises.inpi.fr/api";
-
-let inpiToken: string | null = null;
-let inpiTokenExpiry = 0;
-
-export let lastInpiError: string | null = null;
-
 /**
- * Authenticate with INPI RNE API and cache the JWT token.
- * Token is refreshed 5 min before expiry.
+ * Slugify a company name for domain candidate generation
  */
-async function getInpiToken(
-  username: string,
-  password: string
-): Promise<string | null> {
-  if (inpiToken && Date.now() < inpiTokenExpiry) return inpiToken;
-
-  try {
-    const res = await fetch(`${INPI_API_BASE}/sso/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!res.ok) {
-      lastInpiError = `INPI login failed: ${res.status} ${res.statusText}`;
-      console.error(`[INPI] ${lastInpiError}`);
-      return null;
-    }
-
-    const data = await res.json();
-    inpiToken = data.token;
-    // Refresh 5 min before expiry (tokens typically last 1h)
-    inpiTokenExpiry = Date.now() + 55 * 60 * 1000;
-    lastInpiError = null;
-    return inpiToken;
-  } catch {
-    lastInpiError = "INPI login timeout or network error";
-    return null;
-  }
-}
-
-/**
- * Fetch dirigeant (représentant) info from INPI RNE API.
- * Returns the first physical-person dirigeant found (président, gérant, etc.)
- */
-export async function enrichFromInpi(
-  siren: string,
-  username?: string,
-  password?: string
-): Promise<InpiDirigeant | null> {
-  if (!siren || siren.length !== 9 || !username || !password) return null;
-
-  const token = await getInpiToken(username, password);
-  if (!token) return null;
-
-  try {
-    const res = await fetch(`${INPI_API_BASE}/companies/${siren}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!res.ok) {
-      if (res.status === 404) return null; // Company not yet in RNE
-      lastInpiError = `INPI company fetch failed: ${res.status}`;
-      console.error(`[INPI] ${lastInpiError}`);
-      return null;
-    }
-
-    lastInpiError = null;
-    const data = await res.json();
-
-    // Navigate the RNE JSON structure to find dirigeants
-    // The structure contains formality data with "composition" holding powers/roles
-    const compositions =
-      data.formality?.content?.personnesMorales?.[0]?.composition?.pouvoirs ??
-      data.formality?.content?.personnesPhysiques?.[0]?.composition?.pouvoirs ??
-      [];
-
-    // Also check the top-level representants field (varies by API version)
-    const representants = data.representants ?? [];
-
-    // Try representants first (cleaner structure)
-    for (const rep of representants) {
-      if (rep.nom && rep.prenoms) {
-        return {
-          firstName: capitalize(rep.prenoms.split(/[\s,]+/)[0] || ""),
-          lastName: capitalize(rep.nom),
-          role: rep.qualite || rep.role || "Dirigeant",
-        };
-      }
-    }
-
-    // Fall back to composition/pouvoirs
-    for (const pouvoir of compositions) {
-      const individu = pouvoir.individu || pouvoir;
-      if (individu.nom && individu.prenoms) {
-        return {
-          firstName: capitalize(individu.prenoms.split(/[\s,]+/)[0] || ""),
-          lastName: capitalize(individu.nom),
-          role: pouvoir.roleEnEntreprise || pouvoir.qualite || "Dirigeant",
-        };
-      }
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-}
-
-/**
- * Check DNS for a domain derived from the company name
- * Uses DNS-over-HTTPS (Cloudflare) — free, no library needed
- */
-export async function checkDomain(
-  companyName: string
-): Promise<{ hasDomain: boolean; domain?: string }> {
-  // Generate candidate domain from company name
-  const slug = companyName
+function slugify(name: string): string {
+  return name
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // remove accents
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40);
+}
 
-  const candidates = [`${slug}.fr`, `${slug}.com`];
+/**
+ * Generate multiple slug variants from a company name
+ */
+function generateSlugs(name: string): string[] {
+  const base = slugify(name);
+  if (!base) return [];
 
-  // Check both domains in parallel
+  const slugs = new Set<string>();
+
+  // 1. Full slug with hyphens (current behavior): "glb-industrie-69"
+  slugs.add(base);
+
+  // 2. Without hyphens: "glbindustrie69"
+  const noHyphens = base.replace(/-/g, "");
+  if (noHyphens !== base) slugs.add(noHyphens);
+
+  // 3. Without trailing numbers: "glb-industrie"
+  const noTrailingNums = base.replace(/-?\d+$/, "").replace(/-$/, "");
+  if (noTrailingNums && noTrailingNums !== base) {
+    slugs.add(noTrailingNums);
+    // Also without hyphens: "glbindustrie"
+    const noTrailingNumsNoHyphens = noTrailingNums.replace(/-/g, "");
+    if (noTrailingNumsNoHyphens !== noTrailingNums) slugs.add(noTrailingNumsNoHyphens);
+  }
+
+  // 4. Initials: first letter of each word — "gli" from "glb-industrie"
+  const words = base.split("-").filter(Boolean);
+  if (words.length >= 2) {
+    const initials = words.map((w) => w[0]).join("");
+    if (initials.length >= 2) slugs.add(initials);
+
+    // Initials + trailing numbers if any: "gli69"
+    const trailingNums = base.match(/(\d+)$/);
+    if (trailingNums && initials.length >= 2) {
+      slugs.add(initials + trailingNums[1]);
+    }
+  }
+
+  return [...slugs].filter((s) => s.length >= 2);
+}
+
+const TLDS = [".fr", ".com", ".net", ".eu", ".io"];
+
+/**
+ * Check DNS for domains derived from company name + optional nomCommercial
+ * Tests multiple slug variants × multiple TLDs via Cloudflare DoH (free)
+ */
+export async function checkDomain(
+  companyName: string,
+  nomCommercial?: string
+): Promise<{ hasDomain: boolean; domain?: string }> {
+  // Generate slug variants from company name and nomCommercial
+  const slugs = generateSlugs(companyName);
+  if (nomCommercial) {
+    for (const s of generateSlugs(nomCommercial)) {
+      if (!slugs.includes(s)) slugs.push(s);
+    }
+  }
+
+  // Build candidate domains: slugs × TLDs, ordered by TLD priority
+  // Group by TLD priority so .fr domains are checked before .com, etc.
+  const candidates: string[] = [];
+  for (const tld of TLDS) {
+    for (const slug of slugs) {
+      candidates.push(`${slug}${tld}`);
+    }
+  }
+
+  // Cap at 20 to avoid excessive DNS queries
+  const capped = candidates.slice(0, 20);
+
+  // Check all domains in parallel
   const results = await Promise.allSettled(
-    candidates.map(async (domain) => {
+    capped.map(async (domain) => {
       const res = await fetch(
         `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,
         {
@@ -286,7 +225,7 @@ export async function checkDomain(
     })
   );
 
-  // Prefer .fr over .com
+  // Return first resolved domain (ordered by TLD priority: .fr > .com > .net > .eu > .io)
   for (const result of results) {
     if (result.status === "fulfilled" && result.value) {
       return { hasDomain: true, domain: result.value };
@@ -341,27 +280,62 @@ export async function probeWebsite(
 }
 
 /**
- * Guess email from dirigeant name + domain
- * Returns most common French patterns
+ * Normalize a name for email generation (remove accents, lowercase)
  */
-export function guessEmail(
+function normalizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z-]/g, "");
+}
+
+/**
+ * Check MX records for a domain using Cloudflare DoH (free)
+ * Returns true if the domain can receive email
+ */
+async function hasMxRecords(domain: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=MX`,
+      {
+        headers: { Accept: "application/dns-json" },
+        signal: AbortSignal.timeout(3000),
+      }
+    );
+    if (!res.ok) return false;
+    const data = await res.json();
+    return (data.Answer || []).some((r: { type: number }) => r.type === 15);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Guess email from dirigeant name + domain
+ * Validates MX records first, then returns best pattern
+ * Patterns tested (French B2B order): prenom.nom, p.nom, prenom, contact, info
+ */
+export async function guessEmail(
   firstName: string,
   lastName: string,
   domain?: string
-): string | undefined {
-  if (!firstName || !lastName || !domain) return undefined;
+): Promise<string | undefined> {
+  if (!domain) return undefined;
 
-  const fn = firstName
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  const ln = lastName
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+  // Check MX records — skip if domain can't receive email
+  const canReceiveMail = await hasMxRecords(domain);
+  if (!canReceiveMail) return undefined;
 
-  // Most common B2B French pattern
-  return `${fn}.${ln}@${domain}`;
+  const fn = firstName ? normalizeName(firstName) : "";
+  const ln = lastName ? normalizeName(lastName) : "";
+
+  // Return best personal pattern if dirigeant data available
+  if (fn && ln) return `${fn}.${ln}@${domain}`;
+  if (fn) return `${fn}@${domain}`;
+
+  // Fallback to generic contact email
+  return `contact@${domain}`;
 }
 
 /**
@@ -372,15 +346,12 @@ export async function enrichLead(
   companyName: string,
   inseeToken?: string,
   skipWebProbe = false,
-  inpiCredentials?: { username: string; password: string }
+  nomCommercial?: string,
 ): Promise<EnrichmentResult> {
-  // Run INSEE + DNS + INPI in parallel
-  const [inseeData, domainResult, dirigeant] = await Promise.all([
+  // Run INSEE + DNS in parallel (INPI removed — BODACC provides dirigeant directly)
+  const [inseeData, domainResult] = await Promise.all([
     enrichFromInsee(siren, inseeToken),
-    checkDomain(companyName),
-    inpiCredentials
-      ? enrichFromInpi(siren, inpiCredentials.username, inpiCredentials.password)
-      : Promise.resolve(null),
+    checkDomain(companyName, nomCommercial),
   ]);
 
   // If domain found, probe the website (unless skipped for time budget)
@@ -393,23 +364,16 @@ export async function enrichLead(
     websiteStack = probe.stack;
   }
 
-  // Guess email if we have dirigeant name + domain
-  const guessedEmail =
-    dirigeant && domainResult.domain
-      ? guessEmail(dirigeant.firstName, dirigeant.lastName, domainResult.domain)
-      : undefined;
-
   return {
     nafCode: inseeData.nafCode,
     activityLabel: inseeData.activity,
     employeeEstimate: inseeData.employeeRange,
     creationDate: inseeData.creationDate,
-    dirigeant: dirigeant || undefined,
     hasDomain: domainResult.hasDomain,
     domain: domainResult.domain,
     hasWebsite,
     websiteStack,
     socialPresence: [],
-    guessedEmail,
+    guessedEmail: undefined, // Email now guessed in ingest.ts from BODACC dirigeant
   };
 }
