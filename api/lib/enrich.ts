@@ -312,7 +312,7 @@ function verifyDomainOwnership(html: string, signals: VerificationSignals): bool
 export async function probeWebsite(
   domain: string,
   signals?: VerificationSignals
-): Promise<{ hasWebsite: boolean; stack: string[]; verified: boolean }> {
+): Promise<{ hasWebsite: boolean; stack: string[]; socialPresence: string[]; verified: boolean }> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
@@ -344,12 +344,21 @@ export async function probeWebsite(
 
     if (stack.length === 0) stack.push("Custom / inconnu");
 
+    // Detect social media links from HTML we already fetched
+    const socialPresence: string[] = [];
+    if (/linkedin\.com\/company\//i.test(html)) socialPresence.push("LinkedIn");
+    if (/facebook\.com\//i.test(html) || /fb\.com\//i.test(html)) socialPresence.push("Facebook");
+    if (/twitter\.com\//i.test(html) || /x\.com\//i.test(html)) socialPresence.push("Twitter/X");
+    if (/instagram\.com\//i.test(html)) socialPresence.push("Instagram");
+    if (/youtube\.com\//i.test(html)) socialPresence.push("YouTube");
+    if (/tiktok\.com\//i.test(html)) socialPresence.push("TikTok");
+
     // Verify domain belongs to company
     const verified = signals ? verifyDomainOwnership(html, signals) : false;
 
-    return { hasWebsite: true, stack, verified };
+    return { hasWebsite: true, stack, socialPresence, verified };
   } catch {
-    return { hasWebsite: false, stack: [], verified: false };
+    return { hasWebsite: false, stack: [], socialPresence: [], verified: false };
   }
 }
 
@@ -469,6 +478,7 @@ export async function enrichLead(
   // If domain found, probe the website (unless skipped for time budget)
   let hasWebsite = false;
   let websiteStack: string[] = [];
+  let socialPresence: string[] = [];
   let domainVerified = false;
 
   if (domainResult.hasDomain && domainResult.domain) {
@@ -481,6 +491,7 @@ export async function enrichLead(
       });
       hasWebsite = probe.hasWebsite;
       websiteStack = probe.stack;
+      socialPresence = probe.socialPresence;
       domainVerified = probe.verified;
     }
 
@@ -500,7 +511,7 @@ export async function enrichLead(
     domainVerified,
     hasWebsite,
     websiteStack,
-    socialPresence: [],
+    socialPresence,
     guessedEmail: undefined, // Email now guessed in ingest.ts from BODACC dirigeant
   };
 }
