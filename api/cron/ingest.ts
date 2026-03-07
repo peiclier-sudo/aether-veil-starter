@@ -41,12 +41,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   yesterday.setDate(yesterday.getDate() - 1);
   const dateStr = yesterday.toISOString().split("T")[0];
 
-  // Log pipeline run
-  const { data: run } = await supabase
+  // Log pipeline run (also serves as write-access test)
+  const { data: run, error: runError } = await supabase
     .from("pipeline_runs")
     .insert({ run_date: dateStr, step: "ingest", status: "running" })
     .select()
     .single();
+
+  if (runError) {
+    console.error("[INGEST] Cannot write to database:", runError.message);
+    return res.status(500).json({
+      status: "error",
+      error: `Database write failed: ${runError.message}`,
+      hint: "Check SUPABASE_SERVICE_ROLE_KEY and RLS policies",
+    });
+  }
 
   try {
     // ── Step 1: Fetch BODACC ────────────────
@@ -81,6 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let domainVerifiedHits = 0;
     let websiteHits = 0;
     const allScores: number[] = [];
+    const upsertErrors: string[] = [];
     const sampleLeads: Array<{ name: string; siren: string; nafCode: string; hasDomain: boolean; domainVerified: boolean; hasWebsite: boolean; score: number; vertical: string }> = [];
 
     // Time budget: stop enriching 30s before Vercel kills us
@@ -215,7 +225,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               score_reasons: scoring.reasons,
               has_domain: enrichment.hasDomain,
               domain: enrichment.domain || null,
-              mx_valid: enrichment.domainVerified,
+              domain_verified: enrichment.domainVerified,
               has_website: enrichment.hasWebsite,
               website_stack: enrichment.websiteStack,
               social_presence: enrichment.socialPresence,
@@ -234,12 +244,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       );
 
-      // Log failures (including Supabase errors returned in response)
+      // Log and collect failures (including Supabase errors returned in response)
       results.forEach((r, idx) => {
         if (r.status === "rejected") {
-          console.error(`[INGEST] Failed to process lead ${i + idx}:`, r.reason);
+          const msg = `Lead ${i + idx} rejected: ${r.reason}`;
+          console.error(`[INGEST] ${msg}`);
+          if (upsertErrors.length < 5) upsertErrors.push(msg);
         } else if (r.value?.error) {
-          console.error(`[INGEST] Supabase error for lead ${i + idx}:`, r.value.error.message);
+          const msg = `Lead ${i + idx}: ${r.value.error.message} (code: ${r.value.error.code}, details: ${r.value.error.details})`;
+          console.error(`[INGEST] Supabase error — ${msg}`);
+          if (upsertErrors.length < 5) upsertErrors.push(msg);
         }
       });
 
@@ -248,6 +262,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
+
+    // ── Verify leads were actually written ──────────
+    const { count: leadsInDb } = await supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("bodacc_date", dateStr);
 
     // ── Step 4: Update daily stats (from in-memory scores) ──────────
     const stats = {
@@ -292,6 +312,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         domainHits,
         domainVerifiedHits,
         websiteHits,
+        leadsInDb: leadsInDb ?? 0,
+        upsertErrors: upsertErrors.length > 0 ? upsertErrors : undefined,
         sampleLeads,
       },
     });
