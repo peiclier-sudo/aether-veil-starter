@@ -285,9 +285,10 @@ function extractDirigeantFromAdmin(administration: string): BodaccDirigeant | un
 // ── Extract dirigeant from PP (personne physique) ───
 
 function extractDirigeantFromPP(personne: PersonneData): BodaccDirigeant | undefined {
-  if (!personne.nom) return undefined;
-  const firstName = personne.prenom
-    ? capitalize(personne.prenom.split(/[,\s]+/)[0])
+  if (!personne.nom || typeof personne.nom !== "string") return undefined;
+  const prenomStr = typeof personne.prenom === "string" ? personne.prenom : String(personne.prenom || "");
+  const firstName = prenomStr
+    ? capitalize(prenomStr.split(/[,\s]+/)[0])
     : "";
   return {
     firstName,
@@ -353,7 +354,7 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
 
       // ── Dirigeant ──
       let dirigeant: BodaccDirigeant | undefined;
-      if (personne?.typePersonne === "pm" && personne.administration) {
+      if (personne?.typePersonne === "pm" && personne.administration && typeof personne.administration === "string") {
         // PM: parse "Gérant : NOM Prénom" from administration text
         dirigeant = extractDirigeantFromAdmin(personne.administration);
       } else if (personne?.typePersonne === "pp") {
