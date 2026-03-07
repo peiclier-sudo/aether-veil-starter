@@ -148,7 +148,15 @@ export default function LeadDetail() {
                 </div>
                 {lead.enrichment.hasDomain ? (
                   <div className="space-y-2 text-[13px]">
-                    <div className="flex justify-between"><span className="text-muted">Domaine</span><span className="text-heading">{lead.enrichment.domain}</span></div>
+                    <div className="flex justify-between">
+                      <span className="text-muted">Domaine</span>
+                      <span className="flex items-center gap-1 text-heading">
+                        {lead.enrichment.domain}
+                        {lead.enrichment.domainVerified
+                          ? <span title="Vérifié"><Check className="h-3.5 w-3.5 text-score-high" /></span>
+                          : <span className="text-[11px] text-warning" title="Non vérifié — le domaine existe mais n'a pas été confirmé comme appartenant à cette entreprise">?</span>}
+                      </span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-muted">Site web</span>
                       {lead.enrichment.hasWebsite

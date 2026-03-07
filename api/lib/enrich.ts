@@ -28,6 +28,7 @@ interface EnrichmentResult {
   // Web presence
   hasDomain: boolean;
   domain?: string;
+  domainVerified: boolean;
   hasWebsite: boolean;
   websiteStack: string[];
   socialPresence: string[];
@@ -236,12 +237,82 @@ export async function checkDomain(
 }
 
 /**
- * Probe a website to detect CMS/stack
- * Simple HTTP HEAD + body scan
+ * Signals used to verify domain ownership via website content
+ */
+interface VerificationSignals {
+  companyName: string;
+  siren?: string;
+  city?: string;
+  nomCommercial?: string;
+}
+
+/**
+ * Check if HTML content mentions the company (name, SIREN, or city)
+ * Uses normalized comparison to handle accents, case, etc.
+ */
+function verifyDomainOwnership(html: string, signals: VerificationSignals): boolean {
+  const normalizedHtml = html
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  // Check SIREN (strongest signal — unique identifier)
+  if (signals.siren && signals.siren.length === 9) {
+    // Match SIREN with or without spaces (e.g. "932 430 598" or "932430598")
+    const sirenSpaced = signals.siren.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3");
+    if (normalizedHtml.includes(signals.siren) || normalizedHtml.includes(sirenSpaced)) {
+      return true;
+    }
+  }
+
+  // Check company name (extract significant words, ignore legal forms)
+  const legalForms = ["sas", "sarl", "eurl", "sa", "sasu", "sci", "snc", "auto-entrepreneur", "ei", "eirl", "scp", "selarl"];
+  const nameWords = signals.companyName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && !legalForms.includes(w));
+
+  // At least 2 significant words must match, or 1 if the name has only 1 word
+  const threshold = nameWords.length <= 1 ? 1 : 2;
+  const matchedWords = nameWords.filter((w) => normalizedHtml.includes(w));
+  if (matchedWords.length >= threshold) return true;
+
+  // Check nomCommercial if available
+  if (signals.nomCommercial) {
+    const commercialWords = signals.nomCommercial
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 3);
+    const commercialThreshold = commercialWords.length <= 1 ? 1 : 2;
+    const commercialMatched = commercialWords.filter((w) => normalizedHtml.includes(w));
+    if (commercialMatched.length >= commercialThreshold) return true;
+  }
+
+  // Check city name as weak signal (only if 5+ chars to avoid false positives)
+  if (signals.city && signals.city.length >= 5) {
+    const normalizedCity = signals.city
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (normalizedHtml.includes(normalizedCity)) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Probe a website to detect CMS/stack + verify domain ownership
  */
 export async function probeWebsite(
-  domain: string
-): Promise<{ hasWebsite: boolean; stack: string[] }> {
+  domain: string,
+  signals?: VerificationSignals
+): Promise<{ hasWebsite: boolean; stack: string[]; verified: boolean }> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
@@ -254,7 +325,7 @@ export async function probeWebsite(
     });
     clearTimeout(timeout);
 
-    if (!res.ok) return { hasWebsite: false, stack: [] };
+    if (!res.ok) return { hasWebsite: false, stack: [], verified: false };
 
     const html = await res.text();
     const stack: string[] = [];
@@ -273,9 +344,12 @@ export async function probeWebsite(
 
     if (stack.length === 0) stack.push("Custom / inconnu");
 
-    return { hasWebsite: true, stack };
+    // Verify domain belongs to company
+    const verified = signals ? verifyDomainOwnership(html, signals) : false;
+
+    return { hasWebsite: true, stack, verified };
   } catch {
-    return { hasWebsite: false, stack: [] };
+    return { hasWebsite: false, stack: [], verified: false };
   }
 }
 
@@ -339,6 +413,43 @@ export async function guessEmail(
 }
 
 /**
+ * Check if domain slug is a close match to company name
+ * Used as fallback verification when we can't probe the website
+ */
+function isDomainSlugClose(domain: string, companyName: string, nomCommercial?: string): boolean {
+  // Extract slug from domain (remove TLD)
+  const slug = domain.replace(/\.[a-z]+$/, "").replace(/-/g, "");
+
+  // Generate normalized company name (no accents, no spaces, no legal forms)
+  const legalForms = ["sas", "sarl", "eurl", "sa", "sasu", "sci", "snc", "ei", "eirl", "scp", "selarl"];
+  const normalize = (name: string) =>
+    name.toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "")
+      .split(/\s+/)
+      .filter((w) => !legalForms.includes(w))
+      .join("");
+
+  const normalizedName = normalize(companyName);
+
+  // Exact or near-exact slug match (slug contains name or name contains slug)
+  if (slug.length >= 4 && normalizedName.length >= 4) {
+    if (normalizedName.includes(slug) || slug.includes(normalizedName)) return true;
+  }
+
+  // Also check nomCommercial
+  if (nomCommercial) {
+    const normalizedCommercial = normalize(nomCommercial);
+    if (normalizedCommercial.length >= 4) {
+      if (normalizedCommercial.includes(slug) || slug.includes(normalizedCommercial)) return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Full enrichment pipeline for a single lead
  */
 export async function enrichLead(
@@ -347,6 +458,7 @@ export async function enrichLead(
   inseeToken?: string,
   skipWebProbe = false,
   nomCommercial?: string,
+  city?: string,
 ): Promise<EnrichmentResult> {
   // Run INSEE + DNS in parallel (INPI removed — BODACC provides dirigeant directly)
   const [inseeData, domainResult] = await Promise.all([
@@ -357,11 +469,25 @@ export async function enrichLead(
   // If domain found, probe the website (unless skipped for time budget)
   let hasWebsite = false;
   let websiteStack: string[] = [];
+  let domainVerified = false;
 
-  if (!skipWebProbe && domainResult.hasDomain && domainResult.domain) {
-    const probe = await probeWebsite(domainResult.domain);
-    hasWebsite = probe.hasWebsite;
-    websiteStack = probe.stack;
+  if (domainResult.hasDomain && domainResult.domain) {
+    if (!skipWebProbe) {
+      const probe = await probeWebsite(domainResult.domain, {
+        companyName,
+        siren,
+        city,
+        nomCommercial,
+      });
+      hasWebsite = probe.hasWebsite;
+      websiteStack = probe.stack;
+      domainVerified = probe.verified;
+    }
+
+    // Fallback: if no web probe or probe didn't verify, check slug proximity
+    if (!domainVerified) {
+      domainVerified = isDomainSlugClose(domainResult.domain, companyName, nomCommercial);
+    }
   }
 
   return {
@@ -371,6 +497,7 @@ export async function enrichLead(
     creationDate: inseeData.creationDate,
     hasDomain: domainResult.hasDomain,
     domain: domainResult.domain,
+    domainVerified,
     hasWebsite,
     websiteStack,
     socialPresence: [],

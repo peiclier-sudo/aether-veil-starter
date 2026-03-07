@@ -78,8 +78,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let inseeHits = 0;
     let bodaccDirigeantHits = 0;
     let domainHits = 0;
+    let domainVerifiedHits = 0;
     let websiteHits = 0;
-    const sampleLeads: Array<{ name: string; siren: string; nafCode: string; hasDomain: boolean; hasWebsite: boolean; score: number; vertical: string }> = [];
+    const sampleLeads: Array<{ name: string; siren: string; nafCode: string; hasDomain: boolean; domainVerified: boolean; hasWebsite: boolean; score: number; vertical: string }> = [];
 
     // Time budget: stop enriching 30s before Vercel kills us
     const startTime = Date.now();
@@ -123,11 +124,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const skipWebProbe = remainingMs < 60_000;
 
           // Enrich (INSEE + DNS + web probe — INPI removed, BODACC provides dirigeant)
-          const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken, skipWebProbe, lead.nomCommercial);
+          const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken, skipWebProbe, lead.nomCommercial, lead.city);
           enrichedCount++;
           if (enrichment.nafCode) inseeHits++;
           if (lead.dirigeant) bodaccDirigeantHits++;
           if (enrichment.hasDomain) domainHits++;
+          if (enrichment.domainVerified) domainVerifiedHits++;
           if (enrichment.hasWebsite) websiteHits++;
 
           const dirigeant = lead.dirigeant;
@@ -174,6 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               siren: lead.siren,
               nafCode: enrichment.nafCode || "",
               hasDomain: enrichment.hasDomain,
+              domainVerified: enrichment.domainVerified,
               hasWebsite: enrichment.hasWebsite,
               score: scoring.score,
               vertical: scoring.vertical,
@@ -209,6 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               score_reasons: scoring.reasons,
               has_domain: enrichment.hasDomain,
               domain: enrichment.domain || null,
+              domain_verified: enrichment.domainVerified,
               has_website: enrichment.hasWebsite,
               website_stack: enrichment.websiteStack,
               social_presence: enrichment.socialPresence,
@@ -286,6 +290,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         inseeHits,
         bodaccDirigeantHits,
         domainHits,
+        domainVerifiedHits,
         websiteHits,
         sampleLeads,
       },

@@ -35,6 +35,7 @@ export interface ContactInfo {
 export interface EnrichmentData {
   hasDomain: boolean;
   domain?: string;
+  domainVerified?: boolean;
   mxValid?: boolean;
   mxRecords?: string[];
   hasWebsite: boolean;
