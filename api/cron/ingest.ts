@@ -13,7 +13,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getServiceClient } from "../lib/supabase-server.js";
 import { fetchBodaccCreations } from "../lib/bodacc.js";
-import { enrichLead, lastInseeError } from "../lib/enrich.js";
+import { enrichLead, guessEmail, lastInseeError } from "../lib/enrich.js";
 import { ruleBasedScore, deepseekScore } from "../lib/scoring.js";
 
 export const config = {
@@ -123,7 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const skipWebProbe = remainingMs < 60_000;
 
           // Enrich (INSEE + DNS + web probe — INPI removed, BODACC provides dirigeant)
-          const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken, skipWebProbe);
+          const enrichment = await enrichLead(lead.siren, lead.companyName, inseeToken, skipWebProbe, lead.nomCommercial);
           enrichedCount++;
           if (enrichment.nafCode) inseeHits++;
           if (lead.dirigeant) bodaccDirigeantHits++;
@@ -180,11 +180,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
           }
 
-          // Guess email using whichever dirigeant source we have
-          const guessedEmail =
-            dirigeant && enrichment.domain
-              ? `${dirigeant.firstName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}.${dirigeant.lastName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}@${enrichment.domain}`
-              : enrichment.guessedEmail || null;
+          // Guess email with MX validation
+          const guessedEmail = await guessEmail(
+            dirigeant?.firstName || "",
+            dirigeant?.lastName || "",
+            enrichment.domain
+          ) || null;
 
           // Insert into Supabase
           return supabase.from("leads").upsert(
