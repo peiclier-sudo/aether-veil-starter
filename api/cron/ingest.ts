@@ -80,6 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let domainHits = 0;
     let domainVerifiedHits = 0;
     let websiteHits = 0;
+    const allScores: number[] = [];
     const sampleLeads: Array<{ name: string; siren: string; nafCode: string; hasDomain: boolean; domainVerified: boolean; hasWebsite: boolean; score: number; vertical: string }> = [];
 
     // Time budget: stop enriching 30s before Vercel kills us
@@ -168,6 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           }
           scoredCount++;
+          allScores.push(scoring.score);
 
           // Capture first 5 leads for diagnostics
           if (sampleLeads.length < 5) {
@@ -231,10 +233,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       );
 
-      // Log failures
+      // Log failures (including Supabase errors returned in response)
       results.forEach((r, idx) => {
         if (r.status === "rejected") {
           console.error(`[INGEST] Failed to process lead ${i + idx}:`, r.reason);
+        } else if (r.value?.error) {
+          console.error(`[INGEST] Supabase error for lead ${i + idx}:`, r.value.error.message);
         }
       });
 
@@ -244,19 +248,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // ── Step 4: Update daily stats ──────────
-    const { data: todayLeads } = await supabase
-      .from("leads")
-      .select("ai_score")
-      .eq("bodacc_date", dateStr);
-
+    // ── Step 4: Update daily stats (from in-memory scores) ──────────
     const stats = {
       date: dateStr,
       total_creations: rawLeads.length,
       qualified: uniqueLeads.length,
-      high_score: (todayLeads || []).filter((l) => l.ai_score >= 75).length,
-      medium_score: (todayLeads || []).filter((l) => l.ai_score >= 50 && l.ai_score < 75).length,
-      low_score: (todayLeads || []).filter((l) => l.ai_score < 50).length,
+      high_score: allScores.filter((s) => s >= 75).length,
+      medium_score: allScores.filter((s) => s >= 50 && s < 75).length,
+      low_score: allScores.filter((s) => s < 50).length,
     };
 
     await supabase.from("daily_stats").upsert(stats, { onConflict: "date" });
