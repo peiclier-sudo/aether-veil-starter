@@ -109,6 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           address: lead.address,
           bodacc_id: lead.bodaccId,
           bodacc_date: lead.bodaccDate,
+          vertical: "agence-web",
           enrichment_status: "pending",
           scoring_status: "pending",
         }));
@@ -214,7 +215,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               score_reasons: scoring.reasons,
               has_domain: enrichment.hasDomain,
               domain: enrichment.domain || null,
-              domain_verified: enrichment.domainVerified,
+              mx_valid: enrichment.domainVerified,
               has_website: enrichment.hasWebsite,
               website_stack: enrichment.websiteStack,
               social_presence: enrichment.socialPresence,
