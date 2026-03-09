@@ -336,6 +336,11 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
       // ── Legal form (PM only) ──
       const legalForm = personne?.formeJuridique || "";
 
+      // Skip SCIs — real estate holding companies, not real business leads
+      if (/soci[ée]t[ée]\s+civile\s+immobili[eè]re/i.test(legalForm) || /\bSCI\b/.test(legalForm)) {
+        continue;
+      }
+
       // ── Capital (PM only) ──
       const capital = parseCapital(personne?.capital?.montantCapital);
 
