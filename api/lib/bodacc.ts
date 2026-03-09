@@ -325,6 +325,11 @@ export async function fetchBodaccCreations(date: string): Promise<BodaccLead[]> 
       const etab = parseListeEtablissements(record.listeetablissements);
       const acte = parseActe(record.acte);
 
+      // Skip re-registrations due to HQ transfers — these are existing companies, not new ones
+      if (acte.descriptif && /transfert\s+(de\s+)?(son\s+)?si[èe]ge/i.test(acte.descriptif)) {
+        continue;
+      }
+
       // ── Company name ──
       // PM: personne.denomination, PP: commercant or nomCommercial
       const companyName =
